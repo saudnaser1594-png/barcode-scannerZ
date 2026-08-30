@@ -30,7 +30,7 @@
       padding: 20px;
     }
 
-    /* الهيدر العلوي */
+    /* الهيدر الرئيسي */
     .header {
       background-color: #0056b3;
       color: white;
@@ -42,7 +42,7 @@
 
     .header h2 {
       margin: 0 0 8px 0;
-      font-size: 1.25rem;
+      font-size: 1.2rem;
     }
 
     .header p {
@@ -62,10 +62,6 @@
       font-size: 1rem;
       font-weight: bold;
       cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
     }
 
     .divider {
@@ -74,7 +70,7 @@
       margin: 20px 0;
     }
 
-    /* اختيار ملف من الجهاز */
+    /* قسم اختيار الملف - منع التداخل */
     .file-container {
       text-align: center;
     }
@@ -97,7 +93,7 @@
     input[type="file"] {
       width: 100%;
       direction: rtl;
-      font-size: 0.9rem;
+      font-size: 0.85rem;
     }
 
     /* عداد الشحنات */
@@ -112,7 +108,7 @@
       margin-bottom: 15px;
     }
 
-    /* زر تصدير Excel */
+    /* زر تحميل Excel */
     .btn-excel {
       width: 100%;
       background-color: #ffc107;
@@ -129,7 +125,7 @@
 <body>
 
   <div class="card">
-    <!-- الهيدر الرئيسي -->
+    <!-- الهيدر -->
     <div class="header">
       <h2>Al Zajel Express Trading Company</h2>
       <p>نظام مسح الشحنات</p>
@@ -142,7 +138,7 @@
 
     <hr class="divider">
 
-    <!-- رفع الملف من الجهاز -->
+    <!-- رفع الملف دون تداخل -->
     <div class="file-container">
       <label>أو اختر صورة للباركود من الجهاز:</label>
       <div class="file-input-wrapper">
@@ -157,43 +153,39 @@
       عدد الشحنات: <span id="count">0</span>
     </div>
 
-    <!-- زر تحميل Excel -->
+    <!-- زر التحميل -->
     <button class="btn-excel" id="export-excel">📥 تحميل ملف Excel</button>
   </div>
 
   <script>
-    // مصفوفة تخزين الشحنات الممسوحة
+    // قائمة حفظ الباركودات
     let scannedBarcodes = [];
 
-    // تحديث واجهة العداد
+    // تحديث رقم العداد
     function updateCounter() {
       document.getElementById('count').innerText = scannedBarcodes.length;
     }
 
-    // دالة تصدير ملف Excel بالتنسيق المطلوب بالضبط
+    // تصدير ملف Excel بنفس ترتيب الصورة تمامًا (عمود AWBNUMBER واسم Sheet SaleRent Details)
     function exportToExcel() {
       if (scannedBarcodes.length === 0) {
         alert("لا توجد شحنات ممسوحة للتصدير!");
         return;
       }
 
-      // 1. هيكلة البيانات: عمود واحد باسم AWBNUMBER
       const excelData = scannedBarcodes.map(code => ({
         "AWBNUMBER": code
       }));
 
-      // 2. إنشاء ورقة العمل (Worksheet)
       const worksheet = XLSX.utils.json_to_sheet(excelData);
-
-      // 3. إنشاء ملف العمل (Workbook) وتسمية الـ Sheet باسم SaleRent Details
       const workbook = XLSX.utils.book_new();
+      
+      // تسمية ورقة العمل بالضبط كما بالصورة
       XLSX.utils.book_append_sheet(workbook, worksheet, "SaleRent Details");
 
-      // 4. تصدير وتحميل الملف
       XLSX.writeFile(workbook, "Shipments_List.xlsx");
     }
 
-    // ربط زر التصدير
     document.getElementById('export-excel').addEventListener('click', exportToExcel);
   </script>
 
