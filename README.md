@@ -1,5 +1,3 @@
-# barcode-scannerZ
-An app for scanning shipment barcodes and exporting the data to ExcelZ.
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 
@@ -48,6 +46,8 @@ An app for scanning shipment barcodes and exporting the data to ExcelZ.
             background: white;
             border-radius: 50%;
             padding: 5px;
+            margin-bottom: 10px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
         }
 
         .card {
@@ -165,14 +165,15 @@ An app for scanning shipment barcodes and exporting the data to ExcelZ.
     <!-- رأس الموقع -->
     <div class="header">
 
-        <!-- ضع صورة الشركة هنا -->
+        <!-- صورة شعار زاجل مدمجة تلقائياً -->
         <img
-            src="logo.png"
+            src="https://zajil-express.com/wp-content/uploads/2021/04/Zajil-Logo-1.png"
             class="logo"
-            alt="Al Zajel Express Trading Company">
+            alt="Al Zajel Express Trading Company"
+            onerror="this.src='https://cdn-icons-png.flaticon.com/512/684/684900.png';">
 
         <h1>Al Zajel Express Trading Company</h1>
-        <p>نظام مسح الشحنات</p>
+        <p>نظام مسح الشحنات وتصدير البيانات</p>
 
     </div>
 
