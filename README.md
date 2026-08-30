@@ -1,36 +1,29 @@
 function exportToExcel() {
 
     if (shipments.length === 0) {
-
-        showStatus(
-            "لا توجد شحنات لتصديرها",
-            "error"
-        );
-
+        alert("لا توجد شحنات لتصديرها!");
         return;
     }
 
-    // إنشاء البيانات في عمود A فقط
-    const data = [
-        ["AWBNUMBER"]
-    ];
+    // كل البيانات في العمود A فقط
+    const data = [["AWBNUMBER"]];
 
-    shipments.forEach(function(num) {
-        data.push([num]);
+    // إضافة أرقام الشحنات تحت AWBNUMBER
+    shipments.forEach(function(number) {
+        data.push([String(number)]);
     });
 
     // إنشاء ورقة Excel
     const worksheet = XLSX.utils.aoa_to_sheet(data);
 
-    // جعل العمود A بعرض مناسب
+    // عرض العمود A
     worksheet["!cols"] = [
-        { wch: 30 }
+        { wch: 35 }
     ];
 
-    // تثبيت الأرقام كنص للحفاظ على الأصفار والأرقام الطويلة
-    for (let row = 2; row <= data.length; row++) {
-
-        const cell = worksheet["A" + row];
+    // إجبار أرقام الشحنات على أن تكون نصاً
+    for (let i = 2; i <= data.length; i++) {
+        const cell = worksheet["A" + i];
 
         if (cell) {
             cell.t = "s";
@@ -47,7 +40,7 @@ function exportToExcel() {
         "الشحنات"
     );
 
-    // تحميل الملف
+    // اسم الملف
     XLSX.writeFile(
         workbook,
         "AWBNUMBER.xlsx"
