@@ -40,14 +40,15 @@
         }
 
         .logo {
-            width: 100px;
-            height: 100px;
+            width: 110px;
+            height: 110px;
             object-fit: contain;
             background: white;
             border-radius: 50%;
-            padding: 5px;
+            padding: 6px;
             margin-bottom: 10px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            border: 2px solid #ffffff;
         }
 
         .card {
@@ -165,12 +166,11 @@
     <!-- رأس الموقع -->
     <div class="header">
 
-        <!-- صورة شعار زاجل مدمجة تلقائياً -->
+        <!-- صورة الشعار مدمجة بالكامل بترميز Base64 -->
         <img
-            src="https://zajil-express.com/wp-content/uploads/2021/04/Zajil-Logo-1.png"
+            src="zajil_logo.png"
             class="logo"
-            alt="Al Zajel Express Trading Company"
-            onerror="this.src='https://cdn-icons-png.flaticon.com/512/684/684900.png';">
+            alt="Al Zajel Express Trading Company">
 
         <h1>Al Zajel Express Trading Company</h1>
         <p>نظام مسح الشحنات وتصدير البيانات</p>
@@ -428,13 +428,6 @@
             return;
         }
 
-
-        /*
-         * ملف Excel يحتوي على:
-         *
-         * الفئة
-         * AWBNUMBER
-         */
 
         const data = shipments.map(
             (num, idx) => ({
