@@ -9,11 +9,13 @@
     
     <title>Zajil Express Trading Company</title>
     
-    <!-- مكتبة مسح الباركود للكاميرا والصور -->
+    <!-- مكتبة مسح الباركود للكاميرا -->
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-    <!-- مكتبة قراءة الباركود الثانوية -->
+    <!-- مكتبة ZXing للقراءة العامّة -->
     <script src="https://unpkg.com/@zxing/library@0.21.3/umd/index.min.js"></script>
-    <!-- مكتبة تصدير ملفات Excel -->
+    <!-- مكتبة QuaggaJS المخصصة للباركود الخطي الصعب والتالف -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
+    <!-- مكتبة تصدير Excel -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     
     <style>
@@ -150,11 +152,39 @@
         });
     }
 
-    // محرك الفحص المتكامل والمتقدم للصور 
-    async function scanFileRobust(imageFile) {
-        let resultsFound = [];
+    // القراءة الذكية عبر QuaggaJS المخصصة للباركود الخطي الملتصق بإطارات
+    function scanWithQuagga(srcUrl) {
+        return new Promise((resolve) => {
+            Quagga.decodeSingle({
+                src: srcUrl,
+                numOfWorkers: 0,
+                inputStream: { size: 1280 },
+                decoder: {
+                    readers: ["code_128_reader", "ean_reader", "code_39_reader", "upc_reader"]
+                }
+            }, function(result) {
+                if (result && result.codeResult && result.codeResult.code) {
+                    resolve(result.codeResult.code);
+                } else {
+                    resolve(null);
+                }
+            });
+        });
+    }
 
-        // 1. المحاولة الأولى بواسطة المحرك التكيفي لـ Html5Qrcode
+    // خوارزمية المسح الشاملة متعددة الطبقات (Ultimate Scan Pipeline)
+    async function scanFileUltimate(imageFile) {
+        let resultsFound = [];
+        const fileUrl = URL.createObjectURL(imageFile);
+
+        // 1. تجربة QuaggaJS أولاً (لأنها الأقوى مع باركودات الشحنات الملتصقة بإطارات)
+        const quaggaRes = await scanWithQuagga(fileUrl);
+        if (quaggaRes) {
+            resultsFound.push(quaggaRes);
+            return resultsFound;
+        }
+
+        // 2. تجربة Html5Qrcode للملفات
         try {
             if (!html5QrCode) html5QrCode = new Html5Qrcode("reader");
             const res = await html5QrCode.scanFile(imageFile, true);
@@ -163,10 +193,10 @@
 
         if (resultsFound.length > 0) return resultsFound;
 
-        // 2. المحاولة الثانية بواسطة مكتبة ZXing المباشرة
+        // 3. تجربة ZXing المباشرة
         const codeReader = new ZXing.BrowserMultiFormatReader();
         const imgElement = document.createElement('img');
-        imgElement.src = URL.createObjectURL(imageFile);
+        imgElement.src = fileUrl;
         await new Promise(r => imgElement.onload = r);
 
         try {
@@ -181,53 +211,53 @@
 
         if (resultsFound.length > 0) return resultsFound;
 
-        // 3. المحاولة الثالثة: معالجة الصورة واقتطاع الهوامش لتجاوز الجداول والإطارات
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
+        // 4. خط المعالجة المتقدم: تدوير الصورة وقص الإطارات الملتصقة
+        const angles = [0, 90, 180, 270];
+        for (let angle of angles) {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            if (angle === 90 || angle === 270) {
+                canvas.width = imgElement.naturalHeight;
+                canvas.height = imgElement.naturalWidth;
+            } else {
+                canvas.width = imgElement.naturalWidth;
+                canvas.height = imgElement.naturalHeight;
+            }
 
-        // أبعاد القياس
-        const targetWidth = 1600;
-        const scale = targetWidth / imgElement.naturalWidth;
-        canvas.width = targetWidth;
-        canvas.height = imgElement.naturalHeight * scale;
+            ctx.translate(canvas.width / 2, canvas.height / 2);
+            ctx.rotate((angle * Math.PI) / 180);
+            ctx.drawImage(imgElement, -imgElement.naturalWidth / 2, -imgElement.naturalHeight / 2);
 
-        ctx.drawImage(imgElement, 0, 0, canvas.width, canvas.height);
+            const rotatedDataUrl = canvas.toDataURL('image/jpeg', 0.95);
 
-        // قص هامش بنسبة 5% من الأطراف لإلغاء الإطارات الخارجية المتصلة بالباركود
-        const cropX = canvas.width * 0.05;
-        const cropY = canvas.height * 0.05;
-        const cropW = canvas.width * 0.9;
-        const cropH = canvas.height * 0.9;
+            // تجربة Quagga على الصورة المدوّرة
+            const qRot = await scanWithQuagga(rotatedDataUrl);
+            if (qRot) {
+                resultsFound.push(qRot);
+                break;
+            }
 
-        const cropCanvas = document.createElement('canvas');
-        cropCanvas.width = cropW;
-        cropCanvas.height = cropH;
-        const cropCtx = cropCanvas.getContext('2d');
-        cropCtx.drawImage(canvas, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
+            // تجربة ZXing مع إضافة حاشية بيضاء (Quiet Zone Injector) لتغطية خطوط الجدول
+            const whiteBorderCanvas = document.createElement('canvas');
+            const wbCtx = whiteBorderCanvas.getContext('2d');
+            whiteBorderCanvas.width = canvas.width + 100;
+            whiteBorderCanvas.height = canvas.height + 100;
+            wbCtx.fillStyle = '#FFFFFF';
+            wbCtx.fillRect(0, 0, whiteBorderCanvas.width, whiteBorderCanvas.height);
+            wbCtx.drawImage(canvas, 50, 50);
 
-        // تحسين التباين الرمادي التكيّفي
-        const imgData = cropCtx.getImageData(0, 0, cropW, cropH);
-        const data = imgData.data;
-        for (let i = 0; i < data.length; i += 4) {
-            let gray = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
-            // رفع التباين
-            gray = gray < 110 ? Math.max(0, gray - 30) : Math.min(255, gray + 30);
-            data[i] = data[i + 1] = data[i + 2] = gray;
-        }
-        cropCtx.putImageData(imgData, 0, 0);
+            const processedImg = new Image();
+            processedImg.src = whiteBorderCanvas.toDataURL();
+            await new Promise(r => processedImg.onload = r);
 
-        const processedImg = new Image();
-        processedImg.src = cropCanvas.toDataURL();
-        await new Promise(r => processedImg.onload = r);
-
-        try {
-            const zxingCropRes = await codeReader.decodeMultipleFromImageElement(processedImg);
-            zxingCropRes.forEach(r => resultsFound.push(r.text));
-        } catch (e) {
             try {
-                const singleCrop = await codeReader.decodeFromImageElement(processedImg);
-                resultsFound.push(singleCrop.text);
-            } catch (err) {}
+                const singleRot = await codeReader.decodeFromImageElement(processedImg);
+                if (singleRot) {
+                    resultsFound.push(singleRot.text);
+                    break;
+                }
+            } catch (e) {}
         }
 
         return resultsFound;
@@ -237,7 +267,7 @@
         if (e.target.files.length === 0) return;
         const imageFile = e.target.files[0];
         
-        const scannedTexts = await scanFileRobust(imageFile);
+        const scannedTexts = await scanFileUltimate(imageFile);
         let addedAny = false;
 
         for (let text of scannedTexts) {
