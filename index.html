@@ -1,263 +1,160 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Al Zajel Express Trading Company</title>
-
-  <!-- مكتبة مسح الباركود لقراءة الملفات والصور -->
-  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
-
-  <style>
-    * {
-      box-sizing: border-box;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    }
-
-    body {
-      background-color: #f4f6f9;
-      margin: 0;
-      padding: 15px;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-      direction: rtl;
-    }
-
-    .card {
-      width: 100%;
-      max-width: 400px;
-      background-color: #ffffff;
-      border-radius: 16px;
-      border: 2px solid #003399;
-      padding: 20px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-    }
-
-    .header-banner {
-      background-color: #ffc20e;
-      border-radius: 10px;
-      padding: 12px;
-      margin-bottom: 15px;
-      text-align: center;
-      border: 1px solid #e0a800;
-    }
-
-    .company-title {
-      color: #003399;
-      margin: 0;
-      font-size: 1.15rem;
-      font-weight: 800;
-      direction: ltr;
-    }
-
-    .scanner-label {
-      color: #003399;
-      font-weight: bold;
-      margin-bottom: 8px;
-      display: block;
-      font-size: 0.95rem;
-      text-align: center;
-    }
-
-    #reader {
-      width: 100%;
-      min-height: 200px;
-      border-radius: 10px;
-      overflow: hidden;
-      border: 2px solid #003399;
-      background-color: #000000;
-      margin-bottom: 15px;
-    }
-
-    .file-btn {
-      display: block;
-      width: 100%;
-      background-color: #fffdf2;
-      color: #003399;
-      border: 2px dashed #003399;
-      padding: 12px;
-      border-radius: 10px;
-      font-size: 0.95rem;
-      font-weight: bold;
-      cursor: pointer;
-      margin-bottom: 12px;
-      text-align: center;
-    }
-
-    .counter-box {
-      background-color: #ffc20e;
-      border-radius: 8px;
-      padding: 10px;
-      text-align: center;
-      font-size: 1rem;
-      font-weight: bold;
-      color: #003399;
-      margin-bottom: 12px;
-      border: 1px solid #003399;
-    }
-
-    .list-box {
-      max-height: 160px;
-      min-height: 80px;
-      overflow-y: auto;
-      background: #f8f9fa;
-      border: 1px solid #003399;
-      border-radius: 8px;
-      padding: 8px;
-      margin-bottom: 15px;
-    }
-
-    .list-item {
-      padding: 8px;
-      background-color: #ffffff;
-      border: 1px solid #d1d5db;
-      border-radius: 6px;
-      margin-bottom: 6px;
-      font-size: 0.95rem;
-      color: #003399;
-      font-weight: bold;
-      font-family: monospace;
-      text-align: center;
-    }
-
-    .btn-action {
-      width: 100%;
-      background-color: #003399;
-      color: #ffc20e;
-      border: none;
-      padding: 12px;
-      border-radius: 8px;
-      font-size: 0.95rem;
-      font-weight: bold;
-      cursor: pointer;
-      margin-bottom: 8px;
-    }
-
-    .btn-clear {
-      background-color: #dc2626;
-      color: #ffffff;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ماسح باركود الشحنات</title>
+    <!-- مكتبة مسح الباركود -->
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <!-- مكتبة تصدير ملفات Excel -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        body { font-family: system-ui, sans-serif; text-align: center; background: #f4f6f9; margin: 0; padding: 20px; }
+        .card { max-width: 500px; margin: 0 auto; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        button, input[type="file"] { margin: 10px 0; padding: 10px 15px; border-radius: 6px; border: 1px solid #ccc; font-size: 16px; cursor: pointer; }
+        .btn-main { background: #007bff; color: white; border: none; width: 100%; }
+        .btn-excel { background: #28a745; color: white; border: none; width: 100%; }
+        #reader { width: 100%; margin-top: 15px; display: none; }
+        table { width: 100%; margin-top: 20px; border-collapse: collapse; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
+        th { background: #f8f9fa; }
+    </style>
 </head>
 <body>
 
+<!-- عنصر افتراضي لمسح الملفات دون التعارض مع الكاميرا -->
+<div id="file-reader-temp" style="display:none;"></div>
+
 <div class="card">
-  <div class="header-banner">
-    <h2 class="company-title">Al Zajel Express Trading Company</h2>
-  </div>
+    <h2>ماسح باركود الشحنات 📦</h2>
+    
+    <!-- خيار التصوير المباشر -->
+    <button class="btn-main" onclick="startCamera()">📷 تشغيل الكاميرا للتصوير</button>
+    <div id="reader"></div>
 
-  <!-- الكاميرا والماسح الضوئي -->
-  <span class="scanner-label">📷 الماسح الضوئي لـ (AWBNUMBER)</span>
-  <div id="reader"></div>
+    <hr>
 
-  <!-- خيار رفع الصورة من جهازك (مأخوذ من كودك) -->
-  <label class="file-btn">
-    📁 اختيار صورة الشحنة من الجهاز
-    <input type="file" id="qr-input-file" accept="image/*" style="display: none;">
-  </label>
+    <!-- خيار رفع صورة من الجهاز -->
+    <label for="qr-input-file"><b>أو اختر صورة من الجهاز:</b></label><br>
+    <input type="file" id="qr-input-file" accept="image/*">
 
-  <div class="counter-box">
-    عدد الشحنات المسجلة: <span id="count">0</span>
-  </div>
+    <hr>
 
-  <div class="list-box" id="scannedList"></div>
+    <!-- قائمة الشحنات الممسوحة -->
+    <h3>قائمة الشحنات (<span id="count">0</span>)</h3>
+    <table id="shipments-table">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>رقم الشحنة</th>
+            </tr>
+        </thead>
+        <tbody id="table-body"></tbody>
+    </table>
 
-  <button class="btn-action" onclick="exportToCSV()">تصدير Excel (CSV)</button>
-  <button class="btn-action btn-clear" onclick="clearList()">مسح القائمة</button>
+    <br>
+    <!-- زر تصدير Excel -->
+    <button class="btn-excel" onclick="exportToExcel()">📥 تحميل ملف Excel</button>
 </div>
 
 <script>
-  let shipments = [];
-  const html5QrCode = new Html5Qrcode("reader");
+    let shipments = [];
+    const html5QrCode = new Html5Qrcode("reader");
 
-  // تشغيل الكاميرا التلقائي للمسح المباشر
-  window.onload = function() {
-    html5QrCode.start(
-      { facingMode: "environment" },
-      { fps: 15, qrbox: { width: 250, height: 150 } },
-      (decodedText) => {
-        processAndAddCode(decodedText);
-      },
-      () => {}
-    ).catch(err => {
-      console.log("الكاميرا بانتظار إذن التفعيل");
+    // دالة الفحص والتأكد من أن النص الممسوح ليس رقم جوال
+    function isPhoneNumber(rawText) {
+        if (!rawText) return true;
+        
+        // استخراج الأرقام فقط لاستبعاد المسافات والرموز مثل +
+        const digitsOnly = rawText.trim().replace(/\D/g, '');
+
+        // 1. استبعاد أرقام الجوال المحلية (10 أرقام تبدأ بـ 05)
+        if (digitsOnly.length === 10 && digitsOnly.startsWith('05')) return true;
+        
+        // 2. استبعاد أرقام الجوال الدولية (12-14 رقم تبدأ بـ 9665 أو 009665)
+        if ((digitsOnly.length === 12 || digitsOnly.length === 13 || digitsOnly.length === 14) && /^(9665|009665)/.test(digitsOnly)) return true;
+
+        // 3. استبعاد النصوص التي تحوي كلمات هاتف
+        if (/(\+?9665|05\d{8})/i.test(rawText) || rawText.toLowerCase().includes('tel') || rawText.toLowerCase().includes('phone')) return true;
+
+        return false;
+    }
+
+    // إضافة الرقم إلى القائمة عند النجاح (مع الفلترة)
+    function onScanSuccess(decodedText) {
+        const cleanText = decodedText.trim();
+
+        // تصفية أرقام الجوال
+        if (isPhoneNumber(cleanText)) {
+            alert("⚠️ تم استبعاد هذا الباركود لأنه رقم جوال العميل وليس رقم الشحنة!");
+            return;
+        }
+
+        if (!shipments.includes(cleanText)) {
+            shipments.push(cleanText);
+            updateTable();
+            alert("تم مسح رقم الشحنة بنجاح: " + cleanText);
+        } else {
+            alert("هذا الرقم تم مسحه سابقاً!");
+        }
+    }
+
+    // تحديث الجدول
+    function updateTable() {
+        const tbody = document.getElementById("table-body");
+        tbody.innerHTML = "";
+        shipments.forEach((num, index) => {
+            tbody.innerHTML += `<tr><td>${index + 1}</td><td>${num}</td></tr>`;
+        });
+        document.getElementById("count").innerText = shipments.length;
+    }
+
+    // تشغيل كاميرا الجوال/الجهاز
+    function startCamera() {
+        document.getElementById("reader").style.display = "block";
+        html5QrCode.start(
+            { facingMode: "environment" }, 
+            { fps: 10, qrbox: { width: 250, height: 150 } },
+            (decodedText) => {
+                onScanSuccess(decodedText);
+                html5QrCode.stop(); // إيقاف الكاميرا بعد القراءة
+                document.getElementById("reader").style.display = "none";
+            },
+            (errorMessage) => { /* تجاهل الأخطاء أثناء البحث */ }
+        );
+    }
+
+    // قراءة الباركود من ملف صورة مرفوع بواسطة عنصر محايد مستقل
+    document.getElementById('qr-input-file').addEventListener('change', e => {
+        if (e.target.files.length == 0) return;
+        const imageFile = e.target.files[0];
+        
+        // استخدام كائن مستقل لرفع الصور لعدم التعارض مع الكاميرا
+        const fileScanner = new Html5Qrcode("file-reader-temp");
+
+        fileScanner.scanFile(imageFile, true)
+            .then(decodedText => {
+                onScanSuccess(decodedText);
+            })
+            .catch(err => {
+                alert("تعذر قراءة الباركود من الصورة، تأكد من وضوح الصورة وتوجيهها على باركود الشحنة.");
+            });
     });
-  };
 
-  // دالة تصفية أرقام الجوال ومنع دخولها للقائمة
-  function isPureAWB(codeStr) {
-    const cleanNum = codeStr.trim().replace(/[\s\-\+]/g, '');
-    
-    // استبعاد أرقام الهواتف الجوالة (تبدأ بـ 05 أو 9665)
-    if (/^(05|9665|009665)/.test(cleanNum)) {
-      return false;
+    // تصدير البيانات إلى ملف Excel (.xlsx)
+    function exportToExcel() {
+        if (shipments.length === 0) {
+            alert("لا توجد شحنات لتصديرها!");
+            return;
+        }
+        
+        const data = shipments.map((num, idx) => ({ "م": idx + 1, "رقم الشحنة": num }));
+        const worksheet = XLSX.utils.json_to_sheet(data);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "الشحنات");
+        
+        XLSX.writeFile(workbook, "قائمة_الشحنات.xlsx");
     }
-    if (cleanNum.length === 10 && cleanNum.startsWith('05')) {
-      return false;
-    }
-    return true;
-  }
-
-  // معالجة وإضافة الرقم الممسوح
-  function processAndAddCode(code) {
-    if (!isPureAWB(code)) {
-      alert("هذا الرقم خاص برقم الجوال وتم استبعاده تلقائياً!");
-      return;
-    }
-
-    if (!shipments.includes(code)) {
-      shipments.push(code);
-      updateUI();
-    } else {
-      alert("رقم الشحنة مسجل مسبقاً!");
-    }
-  }
-
-  // طريقة رفع وقراءة الصورة من جهازك (طريقتك المطلوبة)
-  document.getElementById('qr-input-file').addEventListener('change', e => {
-    if (e.target.files.length == 0) return;
-    const imageFile = e.target.files[0];
-    
-    html5QrCode.scanFile(imageFile, true)
-      .then(decodedText => {
-        processAndAddCode(decodedText);
-      })
-      .catch(err => {
-        alert("تعذر قراءة الباركود من الصورة، تأكد من وضوح الصورة.");
-      });
-  });
-
-  function updateUI() {
-    document.getElementById('count').innerText = shipments.length;
-    const listContainer = document.getElementById('scannedList');
-    listContainer.innerHTML = shipments.map(code => `<div class="list-item">${code}</div>`).join('');
-    listContainer.scrollTop = listContainer.scrollHeight;
-  }
-
-  function exportToCSV() {
-    if (shipments.length === 0) {
-      alert("لا توجد شحنات مسجلة للتصدير");
-      return;
-    }
-
-    let csvContent = "data:text/csv;charset=utf-8,AWBNUMBER\n" + shipments.join("\n");
-    let encodedUri = encodeURI(csvContent);
-    let link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "Shipments.csv");
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  }
-
-  function clearList() {
-    if (confirm("هل تريد مسح جميع الشحنات المسجلة؟")) {
-      shipments = [];
-      updateUI();
-    }
-  }
 </script>
 
 </body>
