@@ -2,21 +2,19 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    
-    
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-     <title>​Zajil Express Trading Company </title>
-    <title>Scan Barcode Shipment </title>
-    <!-- مكتبة مسح الباركود للكاميرا -->
+    <title>Zajil Express Trading Company - Scan Barcode</title>
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
-    <!-- مكتبة قراءة كافة الباركودات بالصور (استخراج AWB حصراً) -->
     <script src="https://unpkg.com/@zxing/library@latest"></script>
-    <!-- مكتبة تصدير ملفات Excel -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     
     <style>
         body { font-family: system-ui, sans-serif; text-align: center; background: #f4f6f9; margin: 0; padding: 20px; }
         .card { max-width: 500px; margin: 0 auto; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        
+        /* تغيير لون العناوين للون الأزرق */
+        .card h2 { color: #007bff; margin-bottom: 10px; }
+        
         button, input[type="file"] { margin: 10px 0; padding: 10px 15px; border-radius: 6px; border: 1px solid #ccc; font-size: 16px; cursor: pointer; }
         .btn-main { background: #007bff; color: white; border: none; width: 100%; font-weight: bold; }
         .btn-excel { background: #28a745; color: white; border: none; width: 100%; font-weight: bold; }
@@ -28,24 +26,20 @@
 </head>
 <body>
 
-
     <div class="card">
-        <h2>​Zajil Express Trading Company</h2>
-    <h2>Scan Barcode Shipment </h2>
+        <h2>Zajil Express Trading Company</h2>
+        <h2>Scan Barcode Shipment</h2>
     
-    <!-- خيار التصوير المباشر -->
     <button class="btn-main" onclick="startCamera()">📷 تشغيل الكاميرا للتصوير</button>
     <div id="reader"></div>
 
     <hr>
 
-    <!-- خيار رفع صورة من الجهاز -->
     <label for="qr-input-file"><b>أو اختر صورة من الجهاز:</b></label><br>
     <input type="file" id="qr-input-file" accept="image/*">
 
     <hr>
 
-    <!-- قائمة الشحنات الممسوحة -->
     <h3>قائمة الشحنات (<span id="count">0</span>)</h3>
     <table id="shipments-table">
         <thead>
@@ -58,7 +52,6 @@
     </table>
 
     <br>
-    <!-- زر تصدير Excel -->
     <button class="btn-excel" onclick="exportToExcel()">📥 تحميل ملف Excel</button>
 </div>
 
@@ -161,19 +154,16 @@
         };
     });
 
-    // تصدير البيانات إلى Excel بنفس التنسيق المطلوب تماماً (ورقة SaleRent Details وعمود AWBNUMBER)
+    // تصدير البيانات إلى Excel
     function exportToExcel() {
         if (shipments.length === 0) {
             alert("لا توجد شحنات لتصديرها!");
             return;
         }
         
-        // بناء الهيكل بنفس المسمى المطلوبة في ملف Shipments.xlsx
         const data = shipments.map(num => ({ "AWBNUMBER": num }));
         
         const worksheet = XLSX.utils.json_to_sheet(data);
-        
-        // ضبط عرض العمود لتسهيل القراءة
         worksheet['!cols'] = [{ wch: 25 }];
 
         const workbook = XLSX.utils.book_new();
