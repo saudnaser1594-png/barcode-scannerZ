@@ -120,86 +120,273 @@
       margin-bottom: 8px;
     }
 
+    .btn-action:hover {
+      opacity: 0.9;
+    }
+
     .btn-clear {
       background-color: #dc2626;
       color: #ffffff;
     }
+
+    /* زر اختيار الملف */
+    .file-label {
+      display: block;
+      width: 100%;
+      background-color: #003399;
+      color: #ffc20e;
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-weight: bold;
+      text-align: center;
+      cursor: pointer;
+      margin-bottom: 8px;
+    }
+
+    .file-label:hover {
+      opacity: 0.9;
+    }
+
+    #fileInput {
+      display: none;
+    }
   </style>
 </head>
+
 <body>
 
 <div class="card">
+
   <div class="header-banner">
     <h2 class="company-title">Al Zajel Express Trading Company</h2>
   </div>
 
   <div class="input-group">
-    <label for="barcodeInput">إدخال / مسح رقم الشحنة (AWBNUMBER):</label>
-    <input type="text" id="barcodeInput" class="text-input" placeholder="امسح أو اكتب الرقم هنا..." autofocus onkeydown="checkEnter(event)">
+    <label for="barcodeInput">
+      إدخال / مسح رقم الشحنة (AWBNUMBER):
+    </label>
+
+    <input
+      type="text"
+      id="barcodeInput"
+      class="text-input"
+      placeholder="امسح أو اكتب الرقم هنا..."
+      autofocus
+      onkeydown="checkEnter(event)"
+    >
   </div>
 
-  <button class="btn-action" onclick="addShipment()">إضافة الشحنة للقائمة</button>
+  <button class="btn-action" onclick="addShipment()">
+    إضافة الشحنة للقائمة
+  </button>
+
+  <!-- اختيار ملف -->
+  <label for="fileInput" class="file-label">
+    اختيار ملف
+  </label>
+
+  <input
+    type="file"
+    id="fileInput"
+    accept=".csv,.txt"
+    onchange="importFile(event)"
+  >
 
   <div class="counter-box">
-    عدد الشحنات المسجلة: <span id="count">0</span>
+    عدد الشحنات المسجلة:
+    <span id="count">0</span>
   </div>
 
   <div class="list-box" id="scannedList"></div>
 
-  <button class="btn-action" onclick="exportToCSV()">تصدير Excel (CSV)</button>
-  <button class="btn-action btn-clear" onclick="clearList()">مسح القائمة</button>
+  <button class="btn-action" onclick="exportToCSV()">
+    تصدير Excel (CSV)
+  </button>
+
+  <button class="btn-action btn-clear" onclick="clearList()">
+    مسح القائمة
+  </button>
+
 </div>
 
 <script>
+
   let shipments = [];
 
+  // إضافة شحنة واحدة
   function addShipment() {
+
     const input = document.getElementById('barcodeInput');
     const val = input.value.trim();
 
     if (val && !shipments.includes(val)) {
+
       shipments.push(val);
+
       input.value = '';
+
       updateUI();
     }
+
     input.focus();
   }
 
+
+  // الضغط على Enter
   function checkEnter(e) {
+
     if (e.key === 'Enter') {
+      e.preventDefault();
       addShipment();
     }
+
   }
 
+
+  // تحديث القائمة
   function updateUI() {
+
     document.getElementById('count').innerText = shipments.length;
-    const listContainer = document.getElementById('scannedList');
-    listContainer.innerHTML = shipments.map(code => `<div class="list-item">${code}</div>`).join('');
-    listContainer.scrollTop = listContainer.scrollHeight;
+
+    const listContainer =
+      document.getElementById('scannedList');
+
+    listContainer.innerHTML =
+      shipments.map(code =>
+        `<div class="list-item">${escapeHTML(code)}</div>`
+      ).join('');
+
+    listContainer.scrollTop =
+      listContainer.scrollHeight;
   }
 
+
+  // قراءة الملف
+  function importFile(event) {
+
+    const file = event.target.files[0];
+
+    if (!file) return;
+
+    const reader = new FileReader();
+
+    reader.onload = function(e) {
+
+      const text = e.target.result;
+
+      // تقسيم الملف إلى أسطر
+      const lines = text
+        .split(/\r?\n/)
+        .map(line => line.trim())
+        .filter(line => line !== '');
+
+      let added = 0;
+
+      lines.forEach(line => {
+
+        // أخذ أول قيمة في السطر إذا كان CSV
+        const value = line
+          .split(',')[0]
+          .replace(/"/g, '')
+          .trim();
+
+        // تجاهل عنوان العمود
+        if (
+          value &&
+          value.toUpperCase() !== 'AWBNUMBER' &&
+          !shipments.includes(value)
+        ) {
+
+          shipments.push(value);
+          added++;
+
+        }
+
+      });
+
+      updateUI();
+
+      alert(
+        `تمت إضافة ${added} شحنة من الملف`
+      );
+
+      // إعادة ضبط اختيار الملف
+      event.target.value = '';
+    };
+
+    reader.readAsText(file);
+
+  }
+
+
+  // تصدير CSV
   function exportToCSV() {
+
     if (shipments.length === 0) {
+
       alert("لا توجد شحنات مسجلة للتصدير");
+
       return;
     }
 
-    let csvContent = "data:text/csv;charset=utf-8,AWBNUMBER\n" + shipments.join("\n");
-    let encodedUri = encodeURI(csvContent);
-    let link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "Shipments.csv");
+    let csvContent =
+      "data:text/csv;charset=utf-8,\uFEFFAWBNUMBER\n" +
+      shipments.join("\n");
+
+    let encodedUri =
+      encodeURI(csvContent);
+
+    let link =
+      document.createElement("a");
+
+    link.setAttribute(
+      "href",
+      encodedUri
+    );
+
+    link.setAttribute(
+      "download",
+      "Shipments.csv"
+    );
+
     document.body.appendChild(link);
+
     link.click();
+
     document.body.removeChild(link);
   }
 
+
+  // مسح القائمة
   function clearList() {
-    if (confirm("هل تريد مسح جميع الشحنات المسجلة؟")) {
+
+    if (
+      confirm(
+        "هل تريد مسح جميع الشحنات المسجلة؟"
+      )
+    ) {
+
       shipments = [];
+
       updateUI();
+
     }
+
   }
+
+
+  // حماية عرض النص
+  function escapeHTML(text) {
+
+    const div =
+      document.createElement('div');
+
+    div.textContent = text;
+
+    return div.innerHTML;
+  }
+
 </script>
 
 </body>
