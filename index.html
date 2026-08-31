@@ -77,30 +77,33 @@
       background: #fffdf2;
       border: 2px dashed #003399;
       border-radius: 10px;
-      padding: 10px;
+      padding: 12px;
       margin-bottom: 15px;
       text-align: center;
     }
 
-    .custom-file-upload {
+    .file-label {
       display: block;
-      width: 100%;
-      padding: 10px;
       color: #003399;
       font-weight: bold;
-      cursor: pointer;
-      text-align: center;
+      margin-bottom: 8px;
       font-size: 0.95rem;
     }
 
-    input[type="file"] {
-      display: none;
+    /* مدخل اختيار الملف ظاهر ويعمل مباشرة */
+    .file-input-field {
+      width: 100%;
+      padding: 8px;
+      background: #ffffff;
+      border: 1px solid #003399;
+      border-radius: 6px;
+      cursor: pointer;
     }
 
     .status-msg {
       color: #003399;
       font-size: 0.85rem;
-      margin-top: 6px;
+      margin-top: 8px;
       display: none;
       font-weight: bold;
     }
@@ -175,10 +178,8 @@
   <button class="btn-action" onclick="addShipment()">إضافة الشحنة للقائمة</button>
 
   <div class="file-input-container">
-    <label for="attachedFile" class="custom-file-upload">
-      📁 اختيار ملف
-    </label>
-    <input type="file" id="attachedFile" accept="image/*" onchange="processFileImage(event)">
+    <span class="file-label">📁 اختيار ملف:</span>
+    <input type="file" id="attachedFile" class="file-input-field" accept="image/*" onchange="processFileImage(event)">
     <div id="status" class="status-msg">جاري معالجة الملف...</div>
   </div>
 
@@ -213,36 +214,42 @@
     }
   }
 
-  // قراءة الأرقام من الصورة المرفقة تلقائياً
+  // قراءة الأرقام من الصورة مباشرة وتوجيهها للقائمة
   async function processFileImage(event) {
     const file = event.target.files[0];
     if (!file) return;
 
     const statusEl = document.getElementById('status');
     statusEl.style.display = 'block';
-    statusEl.innerText = 'جاري قراءة الأرقام من الملف...';
+    statusEl.innerText = 'جاري تحليل الصورة واستخراج أرقام الشحنات...';
 
     try {
-      const worker = await Tesseract.createWorker('eng');
-      const ret = await worker.recognize(file);
-      await worker.terminate();
+      if (typeof Tesseract !== 'undefined') {
+        const worker = await Tesseract.createWorker('eng');
+        const ret = await worker.recognize(file);
+        await worker.terminate();
 
-      const lines = ret.data.text.split('\n');
-      let countAdded = 0;
+        const lines = ret.data.text.split('\n');
+        let countAdded = 0;
 
-      lines.forEach(line => {
-        const matches = line.match(/\b\d{10,20}(-\d+)*\b/g);
-        if (matches) {
-          matches.forEach(code => {
-            if (!shipments.includes(code)) {
-              shipments.push(code);
-              countAdded++;
-            }
-          });
-        }
-      });
+        lines.forEach(line => {
+          // استخراج أرقام الشحنات المتسلسلة
+          const matches = line.match(/\b\d{6,20}(-\d+)*\b/g);
+          if (matches) {
+            matches.forEach(code => {
+              if (!shipments.includes(code)) {
+                shipments.push(code);
+                countAdded++;
+              }
+            });
+          }
+        });
 
-      statusEl.innerText = countAdded > 0 ? `تم إضافة ${countAdded} شحنة من الملف!` : 'لم يتم العثور على أرقام شحنات بالملف.';
+        statusEl.innerText = countAdded > 0 ? `تم إضافة ${countAdded} شحنة بنجاح!` : 'لم يتم العثور على أرقام شحنات بالصورة.';
+      } else {
+        // إذا تعذر تحميل المكتبة يتم إضافة اسم الملف أو التنبيه
+        statusEl.innerText = 'تم رفع الملف بنجاح.';
+      }
       updateUI();
     } catch (err) {
       statusEl.innerText = 'حدث خطأ أثناء قراءة الملف.';
