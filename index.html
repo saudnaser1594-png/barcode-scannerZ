@@ -3,6 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- إجبار المتصفح على عدم حفظ النسخة القديمة -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    
     <title>Zajil Express Trading Company</title>
     <!-- مكتبة مسح الباركود للكاميرا -->
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
@@ -13,35 +18,25 @@
     
     <style>
         body { font-family: system-ui, sans-serif; text-align: center; background: #eef2f5; margin: 0; padding: 20px; }
-        .card { max-width: 500px; margin: 0 auto; background: white; padding: 25px; border-radius: 14px; box-shadow: 0 4px 15px rgba(0,0,0,0.15); border-top: 6px solid #ffcc00; }
-        
-        /* ألوان العناوين برقم هوية زاجل */
-        .title-main { color: #003399 !important; font-weight: 800; margin-bottom: 5px; font-size: 22px; }
-        .title-sub { color: #003399 !important; font-weight: 600; margin-top: 0; font-size: 18px; }
+        .card { max-width: 500px; margin: 0 auto; background: white; padding: 25px; border-radius: 14px; box-shadow: 0 4px 15px rgba(0,0,0,0.15); border-top: 8px solid #ffcc00; }
         
         button, input[type="file"] { margin: 10px 0; padding: 12px 15px; border-radius: 8px; font-size: 16px; cursor: pointer; }
-        
-        /* الأزرار بألوان زاجل */
-        .btn-main { background: #003399 !important; color: #ffffff !important; border: none; width: 100%; font-weight: bold; }
-        .btn-excel { background: #ffcc00 !important; color: #003399 !important; border: none; width: 100%; font-weight: bold; }
-        
-        #reader { width: 100%; margin-top: 15px; display: none; border: 2px dashed #003399; }
+        #reader { width: 100%; margin-top: 15px; display: none; border: 2px dashed #003399; overflow: hidden; border-radius: 8px; }
         table { width: 100%; margin-top: 20px; border-collapse: collapse; }
         th { background: #003399 !important; color: #ffffff !important; padding: 10px; }
         td { border: 1px solid #ddd; padding: 8px; text-align: center; }
-        
         hr { border: 0; height: 1px; background: #e0e0e0; margin: 20px 0; }
     </style>
 </head>
 <body>
 
     <div class="card">
-        <!-- ألوان العناوين بالأزرق والأصفر -->
-        <h2 class="title-main">Zajil Express Trading Company</h2>
-        <h2 class="title-sub">Scan Barcode Shipment</h2>
+        <!-- ألوان العناوين برقم اللون مباشرة -->
+        <h2 style="color: #003399 !important; margin-bottom: 5px; font-weight: 800;">Zajil Express Trading Company</h2>
+        <h2 style="color: #003399 !important; margin-top: 0; font-size: 18px;">Scan Barcode Shipment</h2>
     
-    <!-- زر الكاميرا بالأزرق -->
-    <button class="btn-main" onclick="startCamera()">📷 تشغيل الكاميرا للتصوير</button>
+    <!-- زر الكاميرا أزرق زاجل -->
+    <button style="background: #003399 !important; color: white !important; border: none; width: 100%; font-weight: bold;" onclick="startCamera()">📷 تشغيل الكاميرا للتصوير</button>
     <div id="reader"></div>
 
     <hr>
@@ -53,26 +48,27 @@
     <hr>
 
     <!-- قائمة الشحنات -->
-    <h3 style="color: #003399;">قائمة الشحنات (<span id="count" style="color: #d9a000;">0</span>)</h3>
+    <h3 style="color: #003399;">قائمة الشحنات (<span id="count" style="color: #ffcc00; font-size: 22px;">0</span>)</h3>
     <table id="shipments-table">
         <thead>
             <tr>
-                <th>#</th>
-                <th>AWBNUMBER</th>
+                <th style="background: #003399; color: white;">#</th>
+                <th style="background: #003399; color: white;">AWBNUMBER</th>
             </tr>
         </thead>
         <tbody id="table-body"></tbody>
     </table>
 
     <br>
-    <!-- زر Excel بالأصفر والكتابة باللون الأزرق -->
-    <button class="btn-excel" onclick="exportToExcel()">📥 تحميل ملف Excel</button>
+    <!-- زر تصدير Excel أصفر زاجل بكتابة كحلية -->
+    <button style="background: #ffcc00 !important; color: #003399 !important; border: none; width: 100%; font-weight: bold;" onclick="exportToExcel()">📥 تحميل ملف Excel</button>
 </div>
 
 <script>
     let shipments = [];
     const html5QrCode = new Html5Qrcode("reader");
 
+    // تصفية أرقام الجوال
     function isPhoneNumber(rawText) {
         if (!rawText) return true;
         const digitsOnly = rawText.trim().replace(/\D/g, '');
@@ -84,6 +80,7 @@
         return false;
     }
 
+    // إضافة الشحنة للذاكرة
     function addShipmentCode(codeText) {
         const cleanText = codeText.trim();
 
@@ -99,6 +96,7 @@
         return false;
     }
 
+    // تحديث الجدول
     function updateTable() {
         const tbody = document.getElementById("table-body");
         tbody.innerHTML = "";
@@ -108,11 +106,23 @@
         document.getElementById("count").innerText = shipments.length;
     }
 
+    // تشغيل الكاميرا بإعدادات الدقة العالية
     function startCamera() {
         document.getElementById("reader").style.display = "block";
+        
+        const highResConfig = {
+            fps: 15,
+            qrbox: { width: 280, height: 160 },
+            videoConstraints: {
+                facingMode: { exact: "environment" },
+                width: { min: 1280, ideal: 1920 },
+                height: { min: 720, ideal: 1080 }
+            }
+        };
+
         html5QrCode.start(
             { facingMode: "environment" }, 
-            { fps: 10, qrbox: { width: 250, height: 150 } },
+            highResConfig,
             (decodedText) => {
                 if (addShipmentCode(decodedText)) {
                     alert("تم مسح رقم الشحنة بنجاح: " + decodedText);
@@ -121,9 +131,23 @@
                 }
             },
             (errorMessage) => {}
-        );
+        ).catch(err => {
+            // نمط احتياطي للأجهزة التي لا تدعم القيود المتقدمة
+            html5QrCode.start(
+                { facingMode: "environment" },
+                { fps: 10, qrbox: { width: 250, height: 150 } },
+                (decodedText) => {
+                    if (addShipmentCode(decodedText)) {
+                        alert("تم مسح رقم الشحنة بنجاح: " + decodedText);
+                        html5QrCode.stop();
+                        document.getElementById("reader").style.display = "none";
+                    }
+                }
+            );
+        });
     }
 
+    // قراءة من صورة مرفوعة
     document.getElementById('qr-input-file').addEventListener('change', async e => {
         if (e.target.files.length === 0) return;
         const imageFile = e.target.files[0];
@@ -163,6 +187,7 @@
         };
     });
 
+    // تصدير ملف إكسل
     function exportToExcel() {
         if (shipments.length === 0) {
             alert("لا توجد شحنات لتصديرها!");
