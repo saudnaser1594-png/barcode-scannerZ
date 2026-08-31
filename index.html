@@ -4,10 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Al Zajel Express Trading Company</title>
-  
-  <script src="https://unpkg.com/html5-qrcode"></script>
-  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
   <style>
     * {
@@ -15,31 +11,27 @@
       font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     }
 
-    /* خلفية الصفحة أبيض صافي لمنع مشكلة الشاشة الصفراء */
     body {
-      background-color: #ffffff;
+      background-color: #f4f6f9;
       margin: 0;
       padding: 15px;
       display: flex;
       justify-content: center;
-      align-items: flex-start;
+      align-items: center;
       min-height: 100vh;
       direction: rtl;
     }
 
-    /* الكارت الداخلي بألوان وتفاصيل واضحة */
     .card {
       width: 100%;
-      max-width: 420px;
+      max-width: 400px;
       background-color: #ffffff;
       border-radius: 16px;
       border: 2px solid #003399;
-      padding: 18px 15px;
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-      margin-top: 10px;
+      padding: 20px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
     }
 
-    /* هيدر أصفر مميز مع كتابة زرقاء */
     .header-banner {
       background-color: #ffc20e;
       border-radius: 10px;
@@ -57,52 +49,31 @@
       direction: ltr;
     }
 
-    /* إطار الكاميرا بحد أقصى للارتفاع */
-    #reader {
-      width: 100%;
-      min-height: 200px;
-      border-radius: 12px;
-      overflow: hidden;
-      border: 2px solid #003399;
-      background-color: #1a1a1a;
+    .input-group {
       margin-bottom: 15px;
     }
 
-    .file-input-container {
-      background: #fffdf2;
-      border: 2px dashed #003399;
-      border-radius: 10px;
-      padding: 10px;
-      margin-bottom: 15px;
-      text-align: center;
-    }
-
-    .custom-file-upload {
+    .input-group label {
       display: block;
+      color: #003399;
+      font-weight: bold;
+      margin-bottom: 6px;
+      font-size: 0.9rem;
+    }
+
+    .text-input {
       width: 100%;
-      padding: 10px;
-      color: #003399;
-      font-weight: bold;
-      cursor: pointer;
+      padding: 12px;
+      border: 2px solid #003399;
+      border-radius: 8px;
+      font-size: 1rem;
+      direction: ltr;
       text-align: center;
-      font-size: 0.95rem;
-    }
-
-    input[type="file"] {
-      display: none;
-    }
-
-    .status-msg {
-      color: #003399;
-      font-size: 0.85rem;
-      margin-top: 6px;
-      display: none;
-      font-weight: bold;
     }
 
     .counter-box {
       background-color: #ffc20e;
-      border-radius: 10px;
+      border-radius: 8px;
       padding: 10px;
       text-align: center;
       font-size: 1rem;
@@ -113,23 +84,23 @@
     }
 
     .list-box {
-      max-height: 140px;
-      min-height: 50px;
+      max-height: 150px;
+      min-height: 80px;
       overflow-y: auto;
       background: #f8f9fa;
       border: 1px solid #003399;
-      border-radius: 10px;
+      border-radius: 8px;
       padding: 8px;
       margin-bottom: 15px;
     }
 
     .list-item {
-      padding: 6px;
+      padding: 8px;
       background-color: #ffffff;
       border: 1px solid #d1d5db;
       border-radius: 6px;
-      margin-bottom: 4px;
-      font-size: 0.9rem;
+      margin-bottom: 6px;
+      font-size: 0.95rem;
       color: #003399;
       font-weight: bold;
       font-family: monospace;
@@ -162,15 +133,12 @@
     <h2 class="company-title">Al Zajel Express Trading Company</h2>
   </div>
 
-  <div id="reader"></div>
-
-  <div class="file-input-container">
-    <label for="galleryFile" class="custom-file-upload">
-      📁 اختيار صورة من الاستوديو / المعرض
-    </label>
-    <input type="file" id="galleryFile" accept="image/*" onchange="processGalleryImage(event)">
-    <div id="status" class="status-msg">جاري معالجة الصورة...</div>
+  <div class="input-group">
+    <label for="barcodeInput">إدخال / مسح رقم الشحنة (AWBNUMBER):</label>
+    <input type="text" id="barcodeInput" class="text-input" placeholder="امسح أو اكتب الرقم هنا..." autofocus onkeydown="checkEnter(event)">
   </div>
+
+  <button class="btn-action" onclick="addShipment()">إضافة الشحنة للقائمة</button>
 
   <div class="counter-box">
     عدد الشحنات المسجلة: <span id="count">0</span>
@@ -178,67 +146,28 @@
 
   <div class="list-box" id="scannedList"></div>
 
-  <button class="btn-action" onclick="exportToExcel()">تصدير الملف بصيغة Excel</button>
+  <button class="btn-action" onclick="exportToCSV()">تصدير Excel (CSV)</button>
   <button class="btn-action btn-clear" onclick="clearList()">مسح القائمة</button>
 </div>
 
 <script>
   let shipments = [];
-  let html5QrCode;
 
-  function startScanner() {
-    try {
-      html5QrCode = new Html5Qrcode("reader");
-      html5QrCode.start(
-        { facingMode: "environment" }, 
-        { fps: 10, qrbox: { width: 220, height: 130 } },
-        (decodedText) => {
-          if (decodedText && !shipments.includes(decodedText)) {
-            shipments.push(decodedText);
-            updateUI();
-          }
-        },
-        (errorMessage) => {}
-      ).catch(err => {
-        console.log("الكاميرا غبر متاحة أو تحتاج إلى إذن Access.");
-      });
-    } catch (e) {
-      console.log("خطأ في تشغيل القارئ.");
+  function addShipment() {
+    const input = document.getElementById('barcodeInput');
+    const val = input.value.trim();
+
+    if (val && !shipments.includes(val)) {
+      shipments.push(val);
+      input.value = '';
+      updateUI();
     }
+    input.focus();
   }
 
-  async function processGalleryImage(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    const statusEl = document.getElementById('status');
-    statusEl.style.display = 'block';
-    statusEl.innerText = 'جاري قراءة الصورة...';
-
-    try {
-      const worker = await Tesseract.createWorker('eng');
-      const ret = await worker.recognize(file);
-      await worker.terminate();
-
-      const lines = ret.data.text.split('\n');
-      let countAdded = 0;
-
-      lines.forEach(line => {
-        const matches = line.match(/\b\d{10,20}(-\d+)*\b/g);
-        if (matches) {
-          matches.forEach(code => {
-            if (!shipments.includes(code)) {
-              shipments.push(code);
-              countAdded++;
-            }
-          });
-        }
-      });
-
-      statusEl.innerText = countAdded > 0 ? `تم إضافة ${countAdded} شحنة!` : 'لم يتم العثور على أرقام شحنات.';
-      updateUI();
-    } catch (err) {
-      statusEl.innerText = 'حدث خطأ أثناء قراءة الصورة.';
+  function checkEnter(e) {
+    if (e.key === 'Enter') {
+      addShipment();
     }
   }
 
@@ -249,29 +178,28 @@
     listContainer.scrollTop = listContainer.scrollHeight;
   }
 
-  function exportToExcel() {
+  function exportToCSV() {
     if (shipments.length === 0) {
       alert("لا توجد شحنات مسجلة للتصدير");
       return;
     }
 
-    const excelData = shipments.map(code => ({ "AWBNUMBER": code }));
-    const worksheet = XLSX.utils.json_to_sheet(excelData);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "SaleRent Details");
-
-    XLSX.writeFile(workbook, "Shipments.xlsx");
+    let csvContent = "data:text/csv;charset=utf-8,AWBNUMBER\n" + shipments.join("\n");
+    let encodedUri = encodeURI(csvContent);
+    let link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "Shipments.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   }
 
   function clearList() {
     if (confirm("هل تريد مسح جميع الشحنات المسجلة؟")) {
       shipments = [];
-      document.getElementById('status').style.display = 'none';
       updateUI();
     }
   }
-
-  window.onload = startScanner;
 </script>
 
 </body>
