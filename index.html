@@ -9,23 +9,25 @@
     
     <title>Zajil Express Trading Company</title>
     
-    <!-- مكتبة مسح الباركود للكاميرا (مدمجة) -->
+    <!-- مكتبة مسح الباركود للكاميرا -->
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-    <!-- مكتبة قراءة الباركود من الصور (مدمجة) -->
+    <!-- مكتبة قراءة الباركود من الصور -->
     <script src="https://unpkg.com/@zxing/library@0.21.3/umd/index.min.js"></script>
-    <!-- مكتبة تصدير ملفات Excel (مدمجة) -->
+    <!-- مكتبة تصدير ملفات Excel -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     
     <style>
         body { font-family: system-ui, sans-serif; text-align: center; background: #eef2f5; margin: 0; padding: 20px; }
-        .card { max-width: 500px; margin: 0 auto; background: white; padding: 25px; border-radius: 14px; box-shadow: 0 4px 15px rgba(0,0,0,0.15); border-top: 8px solid #ffcc00; }
+        .card { max-width: 550px; margin: 0 auto; background: white; padding: 25px; border-radius: 14px; box-shadow: 0 4px 15px rgba(0,0,0,0.15); border-top: 8px solid #ffcc00; }
         
-        button, input[type="file"] { margin: 10px 0; padding: 12px 15px; border-radius: 8px; font-size: 16px; cursor: pointer; }
+        button, input[type="file"] { margin: 8px 0; padding: 12px 15px; border-radius: 8px; font-size: 16px; cursor: pointer; }
         #reader { width: 100%; margin-top: 15px; display: none; border: 2px dashed #003399; overflow: hidden; border-radius: 8px; }
         table { width: 100%; margin-top: 20px; border-collapse: collapse; }
         th { background: #003399 !important; color: #ffffff !important; padding: 10px; }
-        td { border: 1px solid #ddd; padding: 8px; text-align: center; }
+        td { border: 1px solid #ddd; padding: 8px; text-align: center; font-size: 15px; }
         hr { border: 0; height: 1px; background: #e0e0e0; margin: 20px 0; }
+        .btn-delete { background: #ff4d4d; color: white; border: none; padding: 5px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; }
+        .btn-delete:hover { background: #cc0000; }
     </style>
 </head>
 <body>
@@ -48,8 +50,9 @@
     <table id="shipments-table">
         <thead>
             <tr>
-                <th style="background: #003399; color: white;">#</th>
-                <th style="background: #003399; color: white;">AWBNUMBER</th>
+                <th>#</th>
+                <th>AWBNUMBER</th>
+                <th>الإجراءات</th>
             </tr>
         </thead>
         <tbody id="table-body"></tbody>
@@ -63,7 +66,6 @@
     let shipments = [];
     let html5QrCode;
 
-    // تهيئة المكتبة
     window.addEventListener('DOMContentLoaded', () => {
         if (typeof Html5Qrcode !== 'undefined') {
             html5QrCode = new Html5Qrcode("reader");
@@ -73,20 +75,15 @@
     function isPhoneNumber(rawText) {
         if (!rawText) return true;
         const digitsOnly = rawText.trim().replace(/\D/g, '');
-
         if (digitsOnly.length === 10 && digitsOnly.startsWith('05')) return true;
         if ((digitsOnly.length === 12 || digitsOnly.length === 13 || digitsOnly.length === 14) && /^(9665|009665)/.test(digitsOnly)) return true;
         if (/(\+?9665|05\d{8})/i.test(rawText)) return true;
-
         return false;
     }
 
     function addShipmentCode(codeText) {
         const cleanText = codeText.trim();
-
-        if (isPhoneNumber(cleanText)) {
-            return false;
-        }
+        if (isPhoneNumber(cleanText)) return false;
 
         if (!shipments.includes(cleanText)) {
             shipments.push(cleanText);
@@ -96,11 +93,21 @@
         return false;
     }
 
+    function removeShipment(index) {
+        shipments.splice(index, 1);
+        updateTable();
+    }
+
     function updateTable() {
         const tbody = document.getElementById("table-body");
         tbody.innerHTML = "";
         shipments.forEach((num, index) => {
-            tbody.innerHTML += `<tr><td>${index + 1}</td><td>${num}</td></tr>`;
+            tbody.innerHTML += `
+                <tr>
+                    <td>${index + 1}</td>
+                    <td><b>${num}</b></td>
+                    <td><button class="btn-delete" onclick="removeShipment(${index})">حذف 🗑️</button></td>
+                </tr>`;
         });
         document.getElementById("count").innerText = shipments.length;
     }
@@ -114,11 +121,7 @@
         const highResConfig = {
             fps: 15,
             qrbox: { width: 280, height: 160 },
-            videoConstraints: {
-                facingMode: { exact: "environment" },
-                width: { min: 1280, ideal: 1920 },
-                height: { min: 720, ideal: 1080 }
-            }
+            experimentalFeatures: { useBarCodeDetectorIfSupported: true }
         };
 
         html5QrCode.start(
@@ -131,8 +134,8 @@
                     document.getElementById("reader").style.display = "none";
                 }
             },
-            (errorMessage) => {}
-        ).catch(err => {
+            () => {}
+        ).catch(() => {
             html5QrCode.start(
                 { facingMode: "environment" },
                 { fps: 10, qrbox: { width: 250, height: 150 } },
@@ -147,41 +150,97 @@
         });
     }
 
+    // محرك معالجة الصور المتعدد لمختلف الظروف (Multi-Pipeline Processor)
+    async function processAndScanImage(imgElement) {
+        const codeReader = new ZXing.BrowserMultiFormatReader();
+        
+        // 1. فحص مباشر للصورة الأصلية
+        try {
+            const results = await codeReader.decodeMultipleFromImageElement(imgElement);
+            return results.map(r => r.text);
+        } catch (e) {}
+
+        try {
+            const single = await codeReader.decodeFromImageElement(imgElement);
+            return [single.text];
+        } catch (e) {}
+
+        // 2. معالجة تحسين التباين وعزل الجداول (Contrast & Thresholding)
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        const maxDim = 1200;
+        let scale = Math.min(maxDim / imgElement.naturalWidth, maxDim / imgElement.naturalHeight, 1);
+        
+        canvas.width = imgElement.naturalWidth * scale;
+        canvas.height = imgElement.naturalHeight * scale;
+        ctx.drawImage(imgElement, 0, 0, canvas.width, canvas.height);
+
+        // تعديل الألوان والألوان الثنائية
+        let imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        let data = imgData.data;
+        for (let i = 0; i < data.length; i += 4) {
+            let avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
+            let v = avg > 120 ? 255 : 0;
+            data[i] = data[i + 1] = data[i + 2] = v;
+        }
+        ctx.putImageData(imgData, 0, 0);
+
+        let processedImg = new Image();
+        processedImg.src = canvas.toDataURL();
+        await new Promise(r => processedImg.onload = r);
+
+        try {
+            const results = await codeReader.decodeMultipleFromImageElement(processedImg);
+            return results.map(r => r.text);
+        } catch (e) {}
+
+        // 3. التدوير التلقائي للزوايا (Rotation Fallback) عند كبر زاوية الالتقاط
+        for (let angle of [90, 270]) {
+            const rotCanvas = document.createElement('canvas');
+            const rotCtx = rotCanvas.getContext('2d');
+            rotCanvas.width = canvas.height;
+            rotCanvas.height = canvas.width;
+            
+            rotCtx.translate(rotCanvas.width / 2, rotCanvas.height / 2);
+            rotCtx.rotate((angle * Math.PI) / 180);
+            rotCtx.drawImage(canvas, -canvas.width / 2, -canvas.height / 2);
+
+            let rotImg = new Image();
+            rotImg.src = rotCanvas.toDataURL();
+            await new Promise(r => rotImg.onload = r);
+
+            try {
+                const results = await codeReader.decodeMultipleFromImageElement(rotImg);
+                return results.map(r => r.text);
+            } catch (e) {}
+        }
+
+        return [];
+    }
+
     document.getElementById('qr-input-file').addEventListener('change', async e => {
         if (e.target.files.length === 0) return;
         const imageFile = e.target.files[0];
         
-        const codeReader = new ZXing.BrowserMultiFormatReader();
         const imgElement = document.createElement('img');
         imgElement.src = URL.createObjectURL(imageFile);
 
         imgElement.onload = async () => {
-            try {
-                const results = await codeReader.decodeMultipleFromImageElement(imgElement);
-                let addedAny = false;
+            const scannedTexts = await processAndScanImage(imgElement);
+            let addedAny = false;
 
-                for (let result of results) {
-                    if (addShipmentCode(result.text)) {
-                        addedAny = true;
-                    }
+            for (let text of scannedTexts) {
+                if (addShipmentCode(text)) {
+                    addedAny = true;
                 }
+            }
 
-                if (addedAny) {
-                    alert("تم استخراج رقم الشحنة بنجاح من الصورة!");
-                } else {
-                    alert("لم يتم العثور على رقم شحنة جديد داخل الصورة.");
-                }
-            } catch (err) {
-                try {
-                    const result = await codeReader.decodeFromImageElement(imgElement);
-                    if (addShipmentCode(result.text)) {
-                        alert("تم مسح رقم الشحنة بنجاح: " + result.text);
-                    } else {
-                        alert("الباركود المقروء هو رقم جوال وتم استبعاده تلقائياً.");
-                    }
-                } catch (singleErr) {
-                    alert("تعذر قراءة الباركود من الصورة، تأكد من وضوحها.");
-                }
+            if (addedAny) {
+                alert("تم استخراج رقم الشحنة بنجاح من الصورة!");
+            } else if (scannedTexts.length > 0) {
+                alert("الباركود المقروء هو رقم جوال وتم استبعاده تلقائياً.");
+            } else {
+                alert("تعذر قراءة الباركود، يرجى التأكد من اختيار صورة واضحة.");
             }
         };
     });
