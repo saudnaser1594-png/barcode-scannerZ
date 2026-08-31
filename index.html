@@ -3,17 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- إجبار المتصفح على عدم حفظ النسخة القديمة -->
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     
     <title>Zajil Express Trading Company</title>
-    <!-- مكتبة مسح الباركود للكاميرا -->
-    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
-    <!-- مكتبة قراءة كافة الباركودات بالصور -->
-    <script src="https://unpkg.com/@zxing/library@latest"></script>
-    <!-- مكتبة تصدير ملفات Excel -->
+    
+    <!-- مكتبة مسح الباركود للكاميرا (مدمجة) -->
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    <!-- مكتبة قراءة الباركود من الصور (مدمجة) -->
+    <script src="https://unpkg.com/@zxing/library@0.21.3/umd/index.min.js"></script>
+    <!-- مكتبة تصدير ملفات Excel (مدمجة) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     
     <style>
@@ -31,23 +31,19 @@
 <body>
 
     <div class="card">
-        <!-- ألوان العناوين برقم اللون مباشرة -->
         <h2 style="color: #003399 !important; margin-bottom: 5px; font-weight: 800;">Zajil Express Trading Company</h2>
         <h2 style="color: #003399 !important; margin-top: 0; font-size: 18px;">Scan Barcode Shipment</h2>
     
-    <!-- زر الكاميرا أزرق زاجل -->
     <button style="background: #003399 !important; color: white !important; border: none; width: 100%; font-weight: bold;" onclick="startCamera()">📷 تشغيل الكاميرا للتصوير</button>
     <div id="reader"></div>
 
     <hr>
 
-    <!-- خيار رفع صورة -->
     <label for="qr-input-file"><b style="color: #003399;">أو اختر صورة من الجهاز:</b></label><br>
     <input type="file" id="qr-input-file" accept="image/*">
 
     <hr>
 
-    <!-- قائمة الشحنات -->
     <h3 style="color: #003399;">قائمة الشحنات (<span id="count" style="color: #ffcc00; font-size: 22px;">0</span>)</h3>
     <table id="shipments-table">
         <thead>
@@ -60,15 +56,20 @@
     </table>
 
     <br>
-    <!-- زر تصدير Excel أصفر زاجل بكتابة كحلية -->
     <button style="background: #ffcc00 !important; color: #003399 !important; border: none; width: 100%; font-weight: bold;" onclick="exportToExcel()">📥 تحميل ملف Excel</button>
 </div>
 
 <script>
     let shipments = [];
-    const html5QrCode = new Html5Qrcode("reader");
+    let html5QrCode;
 
-    // تصفية أرقام الجوال
+    // تهيئة المكتبة
+    window.addEventListener('DOMContentLoaded', () => {
+        if (typeof Html5Qrcode !== 'undefined') {
+            html5QrCode = new Html5Qrcode("reader");
+        }
+    });
+
     function isPhoneNumber(rawText) {
         if (!rawText) return true;
         const digitsOnly = rawText.trim().replace(/\D/g, '');
@@ -80,7 +81,6 @@
         return false;
     }
 
-    // إضافة الشحنة للذاكرة
     function addShipmentCode(codeText) {
         const cleanText = codeText.trim();
 
@@ -96,7 +96,6 @@
         return false;
     }
 
-    // تحديث الجدول
     function updateTable() {
         const tbody = document.getElementById("table-body");
         tbody.innerHTML = "";
@@ -106,8 +105,10 @@
         document.getElementById("count").innerText = shipments.length;
     }
 
-    // تشغيل الكاميرا بإعدادات الدقة العالية
     function startCamera() {
+        if (!html5QrCode) {
+            html5QrCode = new Html5Qrcode("reader");
+        }
         document.getElementById("reader").style.display = "block";
         
         const highResConfig = {
@@ -132,7 +133,6 @@
             },
             (errorMessage) => {}
         ).catch(err => {
-            // نمط احتياطي للأجهزة التي لا تدعم القيود المتقدمة
             html5QrCode.start(
                 { facingMode: "environment" },
                 { fps: 10, qrbox: { width: 250, height: 150 } },
@@ -147,7 +147,6 @@
         });
     }
 
-    // قراءة من صورة مرفوعة
     document.getElementById('qr-input-file').addEventListener('change', async e => {
         if (e.target.files.length === 0) return;
         const imageFile = e.target.files[0];
@@ -187,7 +186,6 @@
         };
     });
 
-    // تصدير ملف إكسل
     function exportToExcel() {
         if (shipments.length === 0) {
             alert("لا توجد شحنات لتصديرها!");
