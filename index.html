@@ -1,399 +1,199 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
-
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>نظام قراءة أرقام الشحنات</title>
+  
+  <!-- مكتبة قراءة الباركود عبر الكاميرا -->
+  <script src="https://unpkg.com/html5-qrcode"></script>
+  <!-- مكتبة إنشاء وتصدير ملفات Excel -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
-    <title>Zajil Express Trading Company</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
 
-    <!-- مكتبة قراءة الباركود -->
-    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    body {
+      background-color: #ffc107; /* خلفية الشاشة صفراء */
+      margin: 0;
+      padding: 15px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      direction: rtl;
+    }
 
-    <style>
-        * {
-            box-sizing: border-box;
-        }
+    .card {
+      width: 100%;
+      max-width: 420px;
+      background: #fff9c4; /* خلفية أصفر فاتح */
+      border-radius: 16px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      padding: 20px;
+      border: 2px solid #0056b3;
+    }
 
-        body {
-            margin: 0;
-            padding: 20px 10px;
-            background: #f4f7fb;
-            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            color: #111;
-        }
+    .header {
+      background-color: #0056b3;
+      color: #ffffff;
+      text-align: center;
+      padding: 15px;
+      border-radius: 12px;
+      margin-bottom: 15px;
+    }
 
-        .card {
-            width: 100%;
-            max-width: 500px;
-            margin: 0 auto;
-            background: #fff;
-            border-radius: 20px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-            padding: 25px 20px;
-        }
+    .header h2 {
+      margin: 0;
+      font-size: 1.2rem;
+      color: #ffffff;
+    }
 
-        /* رأس الموقع */
-        .header {
-            text-align: center;
-            margin-bottom: 20px;
-        }
+    #reader {
+      width: 100%;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 2px dashed #0056b3;
+      background-color: #ffffff;
+      margin-bottom: 15px;
+    }
 
-        .company-name {
-            margin: 0 0 15px;
-            color: #111;
-            font-size: 20px;
-            font-weight: 600;
-        }
+    .counter-box {
+      background-color: #ffffff;
+      border: 1px solid #0056b3;
+      padding: 12px;
+      border-radius: 8px;
+      text-align: center;
+      font-size: 1rem;
+      font-weight: bold;
+      color: #0056b3; /* لون النص أزرق */
+      margin-bottom: 15px;
+    }
 
-        .logo {
-            width: 140px;
-            height: 140px;
-            object-fit: contain;
-            display: block;
-            margin: 0 auto 15px;
-            border-radius: 20px;
-        }
+    .btn-action {
+      width: 100%;
+      background-color: #0056b3; /* أزرق */
+      color: #ffffff;
+      border: none;
+      padding: 14px;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+      margin-bottom: 10px;
+      transition: background-color 0.2s;
+    }
 
-        .scanner-title {
-            margin: 0;
-            color: #111;
-            font-size: 24px;
-            font-weight: 700;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-        }
+    .btn-action:hover {
+      background-color: #003d80;
+    }
 
-        /* زر الكاميرا الأزرق */
-        .btn-main {
-            background: #007bff;
-            color: white;
-            border: none;
-            width: 100%;
-            padding: 16px;
-            border-radius: 12px;
-            font-size: 20px;
-            font-weight: 600;
-            cursor: pointer;
-            margin-top: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-        }
+    .btn-excel {
+      background-color: #0056b3;
+      color: #ffc107; /* نص أصفر */
+      border: 2px solid #0056b3;
+    }
 
-        #reader {
-            width: 100%;
-            margin-top: 15px;
-            display: none;
-            border-radius: 12px;
-            overflow: hidden;
-        }
+    .list-box {
+      max-height: 180px;
+      overflow-y: auto;
+      background: #ffffff;
+      border: 1px solid #0056b3;
+      border-radius: 8px;
+      padding: 8px;
+      margin-bottom: 15px;
+    }
 
-        hr {
-            border: 0;
-            border-top: 1px solid #e5e7eb;
-            margin: 25px 0;
-        }
-
-        /* رفع صورة الباركود */
-        .upload-title {
-            display: block;
-            text-align: center;
-            font-size: 20px;
-            font-weight: 700;
-            margin-bottom: 15px;
-            color: #111;
-        }
-
-        .file-box {
-            width: 100%;
-            border: 1px solid #ccc;
-            border-radius: 8px;
-            padding: 8px;
-            background: #fff;
-            direction: rtl;
-        }
-
-        .file-box input[type="file"] {
-            width: 100%;
-            font-size: 15px;
-        }
-
-        .info {
-            text-align: center;
-            color: #71717a;
-            font-size: 14px;
-            line-height: 1.6;
-            margin: 15px 0;
-        }
-
-        /* العداد */
-        .counter {
-            font-size: 22px;
-            font-weight: 700;
-            text-align: center;
-            margin-bottom: 20px;
-            color: #111;
-        }
-
-        /* أزرار التحكم */
-        .buttons {
-            display: flex;
-            gap: 12px;
-            margin-bottom: 20px;
-        }
-
-        .btn-action {
-            flex: 1;
-            padding: 14px;
-            border-radius: 10px;
-            font-size: 18px;
-            font-weight: 600;
-            cursor: pointer;
-            background: #f8f9fa;
-            transition: 0.2s;
-        }
-
-        .btn-clear {
-            color: #dc3545;
-            border: 1px solid #dc3545;
-            background: #fff;
-        }
-
-        .btn-last {
-            color: #333;
-            border: 1px solid #ccc;
-            background: #fff;
-        }
-
-        /* الجدول */
-        .table-wrapper {
-            width: 100%;
-            overflow-x: auto;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        th, td {
-            border: 1px solid #ddd;
-            padding: 10px;
-            text-align: center;
-        }
-
-        th {
-            background: #005baa;
-            color: white;
-        }
-
-        /* رسالة الحالة */
-        #status {
-            display: none;
-            padding: 12px;
-            margin-top: 15px;
-            border-radius: 8px;
-            text-align: center;
-            font-weight: bold;
-        }
-
-        .success { background: #e8f7ee; color: #198754; }
-        .error { background: #fdeaea; color: #dc3545; }
-    </style>
+    .list-item {
+      padding: 6px 10px;
+      border-bottom: 1px solid #eee;
+      font-size: 0.85rem;
+      color: #0056b3; /* الأسماء والأرقام باللون الأزرق */
+      font-family: monospace;
+    }
+  </style>
 </head>
-
 <body>
 
 <div class="card">
+  <div class="header">
+    <h2>مسح الشحنات وتصدير Excel</h2>
+  </div>
 
-    <div class="header">
-        <h1 class="company-name">Zajil Express Trading Company</h1>
-        <img src="logo.png" class="logo" alt="Zajil">
-        <h2 class="scanner-title">📦 Scan Barcode Shipment</h2>
-    </div>
+  <div id="reader"></div>
 
-    <button class="btn-main" onclick="toggleCamera()">
-        📷 تشغيل الكاميرا
-    </button>
+  <div class="counter-box">
+    عدد الشحنات المسجلة: <span id="count">0</span>
+  </div>
 
-    <div id="reader"></div>
+  <div class="list-box" id="scannedList">
+    <!-- تظهر الأرقام المقروءة هنا -->
+  </div>
 
-    <hr>
-
-    <label class="upload-title" for="qr-input-file">
-        أو اختر صورة باركود من الجهاز:
-    </label>
-
-    <div class="file-box">
-        <input type="file" id="qr-input-file" accept="image/*">
-    </div>
-
-    <div id="status"></div>
-
-    <div class="info">
-        يدعم QR والباركود الخطي 1D مثل Code 128 و Code 39 و EAN وغيرها حسب دعم الجهاز والمتصفح.
-    </div>
-
-    <hr>
-
-    <div class="counter">
-        قائمة الشحنات (<span id="counter">0</span>)
-    </div>
-
-    <div class="buttons">
-        <button class="btn-action btn-clear" onclick="deleteAll()">حذف الكل</button>
-        <button class="btn-action btn-last" onclick="deleteLast()">حذف آخر شحنة</button>
-    </div>
-
-    <div class="table-wrapper">
-        <table>
-            <thead>
-                <tr>
-                    <th>#</th>
-                    <th>AWB NUMBER</th>
-                </tr>
-            </thead>
-            <tbody id="shipmentTable">
-            </tbody>
-        </table>
-    </div>
-
+  <button class="btn-action btn-excel" onclick="exportToExcel()">تصدير إلى ملف Excel</button>
+  <button class="btn-action" style="background-color: #d9534f;" onclick="clearList()">مسح القائمة</button>
 </div>
 
 <script>
-    let shipments = [];
-    let html5QrCode = null;
-    let cameraRunning = false;
+  let shipments = [];
+  let html5QrCode;
 
-    window.onload = function () {
-        const saved = localStorage.getItem("zajil_shipments");
-        if (saved) {
-            try { shipments = JSON.parse(saved); } catch (e) { shipments = []; }
+  // إعداد الكاميرا وقراءة الباركود
+  function startScanner() {
+    html5QrCode = new Html5Qrcode("reader");
+    html5QrCode.start(
+      { facingMode: "environment" }, 
+      { fps: 10, qrbox: { width: 250, height: 150 } },
+      (decodedText) => {
+        // إضافة رقم الشحنة عند القراءة الناجحة
+        if (decodedText && !shipments.includes(decodedText)) {
+          shipments.push(decodedText);
+          updateUI();
         }
-        updateTable();
-    };
+      },
+      (errorMessage) => {
+        // التجاهل عند عدم وجود باركود واضح في الإطار
+      }
+    );
+  }
 
-    function saveShipments() {
-        localStorage.setItem("zajil_shipments", JSON.stringify(shipments));
+  function updateUI() {
+    document.getElementById('count').innerText = shipments.length;
+    const listContainer = document.getElementById('scannedList');
+    listContainer.innerHTML = shipments.map(code => `<div class="list-item">${code}</div>`).join('');
+    listContainer.scrollTop = listContainer.scrollHeight;
+  }
+
+  // تصدير البيانات بنفس هيئة الصورة (عمود A برأس AWBNUMBER)
+  function exportToExcel() {
+    if (shipments.length === 0) {
+      alert("لا توجد شحنات مسجلة للتصدير");
+      return;
     }
 
-    function updateTable() {
-        const table = document.getElementById("shipmentTable");
-        const counter = document.getElementById("counter");
+    // بناء الهيكل بنفس نمط النموذج تماماً
+    const excelData = shipments.map(code => ({ "AWBNUMBER": code }));
+    
+    const worksheet = XLSX.utils.json_to_sheet(excelData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "SaleRent Details");
 
-        table.innerHTML = "";
-        shipments.forEach(function (awb, index) {
-            const row = document.createElement("tr");
-            row.innerHTML = `<td>${index + 1}</td><td style="direction:ltr; font-weight:bold; color:#005baa;">${escapeHtml(awb)}</td>`;
-            table.appendChild(row);
-        });
+    // تنزيل الملف
+    XLSX.writeFile(workbook, "Shipments_List.xlsx");
+  }
 
-        counter.textContent = shipments.length;
+  function clearList() {
+    if (confirm("هل تريد مسح جميع الشحنات المسجلة؟")) {
+      shipments = [];
+      updateUI();
     }
+  }
 
-    function escapeHtml(text) {
-        const div = document.createElement("div");
-        div.textContent = text;
-        return div.innerHTML;
-    }
-
-    function addShipment(code) {
-        code = String(code || "").trim();
-        if (!code) {
-            showStatus("لم يتم العثور على رقم شحنة", "error");
-            return;
-        }
-        if (shipments.includes(code)) {
-            showStatus("هذه الشحنة موجودة مسبقاً: " + code, "error");
-            return;
-        }
-        shipments.push(code);
-        saveShipments();
-        updateTable();
-        showStatus("تمت إضافة الشحنة بنجاح", "success");
-    }
-
-    function deleteLast() {
-        if (shipments.length === 0) return;
-        shipments.pop();
-        saveShipments();
-        updateTable();
-    }
-
-    function deleteAll() {
-        if (shipments.length === 0) return;
-        if (confirm("هل أنت متأكد من حذف جميع الشحنات؟")) {
-            shipments = [];
-            saveShipments();
-            updateTable();
-        }
-    }
-
-    function showStatus(message, type) {
-        const status = document.getElementById("status");
-        status.textContent = message;
-        status.className = type;
-        status.style.display = "block";
-        setTimeout(() => { status.style.display = "none"; }, 3000);
-    }
-
-    async function toggleCamera() {
-        const reader = document.getElementById("reader");
-        if (cameraRunning) {
-            await stopCamera();
-            return;
-        }
-        reader.style.display = "block";
-        html5QrCode = new Html5Qrcode("reader");
-
-        try {
-            await html5QrCode.start(
-                { facingMode: "environment" },
-                { fps: 10, qrbox: { width: 250, height: 150 } },
-                function (decodedText) {
-                    addShipment(decodedText);
-                    stopCamera();
-                },
-                function (err) {}
-            );
-            cameraRunning = true;
-            document.querySelector(".btn-main").textContent = "⛔ إيقاف الكاميرا";
-        } catch (err) {
-            reader.style.display = "none";
-            showStatus("تعذر تشغيل الكاميرا.", "error");
-        }
-    }
-
-    async function stopCamera() {
-        if (!html5QrCode) return;
-        try {
-            if (cameraRunning) await html5QrCode.stop();
-            html5QrCode.clear();
-        } catch (e) {}
-        html5QrCode = null;
-        cameraRunning = false;
-        document.getElementById("reader").style.display = "none";
-        document.querySelector(".btn-main").textContent = "📷 تشغيل الكاميرا";
-    }
-
-    document.getElementById("qr-input-file").addEventListener("change", async function (event) {
-        const file = event.target.files[0];
-        if (!file) return;
-        const scanner = new Html5Qrcode("reader");
-        try {
-            const result = await scanner.scanFile(file, true);
-            addShipment(result);
-        } catch (err) {
-            showStatus("لم يتم العثور على باركود في الصورة.", "error");
-        } finally {
-            try { await scanner.clear(); } catch (e) {}
-        }
-        event.target.value = "";
-    });
+  // تشغيل الكاميرا تلقائياً عند فتح الصفحة
+  window.onload = startScanner;
 </script>
 
 </body>
