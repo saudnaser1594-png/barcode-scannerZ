@@ -6,45 +6,54 @@
     <title>Zajil Express Trading Company</title>
     <!-- مكتبة مسح الباركود للكاميرا -->
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
-    <!-- مكتبة قراءة كافة الباركودات بالصور (استخراج AWB حصراً) -->
+    <!-- مكتبة قراءة كافة الباركودات بالصور -->
     <script src="https://unpkg.com/@zxing/library@latest"></script>
     <!-- مكتبة تصدير ملفات Excel -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     
     <style>
-        body { font-family: system-ui, sans-serif; text-align: center; background: #f4f6f9; margin: 0; padding: 20px; }
-        .card { max-width: 500px; margin: 0 auto; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        body { font-family: system-ui, sans-serif; text-align: center; background: #eef2f5; margin: 0; padding: 20px; }
+        .card { max-width: 500px; margin: 0 auto; background: white; padding: 25px; border-radius: 14px; box-shadow: 0 4px 15px rgba(0,0,0,0.15); border-top: 6px solid #ffcc00; }
         
-        button, input[type="file"] { margin: 10px 0; padding: 10px 15px; border-radius: 6px; border: 1px solid #ccc; font-size: 16px; cursor: pointer; }
-        .btn-main { background: #007bff; color: white; border: none; width: 100%; font-weight: bold; }
-        .btn-excel { background: #28a745; color: white; border: none; width: 100%; font-weight: bold; }
-        #reader { width: 100%; margin-top: 15px; display: none; }
+        /* ألوان العناوين برقم هوية زاجل */
+        .title-main { color: #003399 !important; font-weight: 800; margin-bottom: 5px; font-size: 22px; }
+        .title-sub { color: #003399 !important; font-weight: 600; margin-top: 0; font-size: 18px; }
+        
+        button, input[type="file"] { margin: 10px 0; padding: 12px 15px; border-radius: 8px; font-size: 16px; cursor: pointer; }
+        
+        /* الأزرار بألوان زاجل */
+        .btn-main { background: #003399 !important; color: #ffffff !important; border: none; width: 100%; font-weight: bold; }
+        .btn-excel { background: #ffcc00 !important; color: #003399 !important; border: none; width: 100%; font-weight: bold; }
+        
+        #reader { width: 100%; margin-top: 15px; display: none; border: 2px dashed #003399; }
         table { width: 100%; margin-top: 20px; border-collapse: collapse; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
-        th { background: #f8f9fa; }
+        th { background: #003399 !important; color: #ffffff !important; padding: 10px; }
+        td { border: 1px solid #ddd; padding: 8px; text-align: center; }
+        
+        hr { border: 0; height: 1px; background: #e0e0e0; margin: 20px 0; }
     </style>
 </head>
 <body>
 
     <div class="card">
-        <!-- تم تغيير اللون إلى الأزرق مباشرة هنا -->
-        <h2 style="color: #007bff !important; margin-bottom: 5px;">Zajil Express Trading Company</h2>
-        <h2 style="color: #007bff !important; margin-top: 0;">Scan Barcode Shipment</h2>
+        <!-- ألوان العناوين بالأزرق والأصفر -->
+        <h2 class="title-main">Zajil Express Trading Company</h2>
+        <h2 class="title-sub">Scan Barcode Shipment</h2>
     
-    <!-- خيار التصوير المباشر -->
+    <!-- زر الكاميرا بالأزرق -->
     <button class="btn-main" onclick="startCamera()">📷 تشغيل الكاميرا للتصوير</button>
     <div id="reader"></div>
 
     <hr>
 
-    <!-- خيار رفع صورة من الجهاز -->
-    <label for="qr-input-file"><b>أو اختر صورة من الجهاز:</b></label><br>
+    <!-- خيار رفع صورة -->
+    <label for="qr-input-file"><b style="color: #003399;">أو اختر صورة من الجهاز:</b></label><br>
     <input type="file" id="qr-input-file" accept="image/*">
 
     <hr>
 
-    <!-- قائمة الشحنات الممسوحة -->
-    <h3>قائمة الشحنات (<span id="count">0</span>)</h3>
+    <!-- قائمة الشحنات -->
+    <h3 style="color: #003399;">قائمة الشحنات (<span id="count" style="color: #d9a000;">0</span>)</h3>
     <table id="shipments-table">
         <thead>
             <tr>
@@ -56,7 +65,7 @@
     </table>
 
     <br>
-    <!-- زر تصدير Excel -->
+    <!-- زر Excel بالأصفر والكتابة باللون الأزرق -->
     <button class="btn-excel" onclick="exportToExcel()">📥 تحميل ملف Excel</button>
 </div>
 
@@ -64,7 +73,6 @@
     let shipments = [];
     const html5QrCode = new Html5Qrcode("reader");
 
-    // تصفية أرقام الجوال بجميع صيغها (05xxxxxxx / 9665xxxxxxx)
     function isPhoneNumber(rawText) {
         if (!rawText) return true;
         const digitsOnly = rawText.trim().replace(/\D/g, '');
@@ -76,7 +84,6 @@
         return false;
     }
 
-    // إضافة رقم الشحنة حصراً للذاكرة
     function addShipmentCode(codeText) {
         const cleanText = codeText.trim();
 
@@ -92,7 +99,6 @@
         return false;
     }
 
-    // تحديث الجدول على الشاشة
     function updateTable() {
         const tbody = document.getElementById("table-body");
         tbody.innerHTML = "";
@@ -102,7 +108,6 @@
         document.getElementById("count").innerText = shipments.length;
     }
 
-    // تشغيل الكاميرا
     function startCamera() {
         document.getElementById("reader").style.display = "block";
         html5QrCode.start(
@@ -119,7 +124,6 @@
         );
     }
 
-    // قراءة الصورة المرفوعة واستخراج باركود AWB فقط
     document.getElementById('qr-input-file').addEventListener('change', async e => {
         if (e.target.files.length === 0) return;
         const imageFile = e.target.files[0];
@@ -159,7 +163,6 @@
         };
     });
 
-    // تصدير البيانات إلى Excel
     function exportToExcel() {
         if (shipments.length === 0) {
             alert("لا توجد شحنات لتصديرها!");
@@ -167,13 +170,11 @@
         }
         
         const data = shipments.map(num => ({ "AWBNUMBER": num }));
-        
         const worksheet = XLSX.utils.json_to_sheet(data);
         worksheet['!cols'] = [{ wch: 25 }];
 
         const workbook = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(workbook, worksheet, "SaleRent Details");
-        
         XLSX.writeFile(workbook, "Shipments.xlsx");
     }
 </script>
