@@ -5,10 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Al Zajel Express Trading Company</title>
 
-  <!-- مكتبات القراءة والمسح الضوئي -->
+  <!-- مكتبات الماسح الضوئي والاستخراج والتصدير -->
   <script src="https://unpkg.com/html5-qrcode"></script>
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
   <style>
     * {
@@ -54,14 +53,23 @@
       direction: ltr;
     }
 
-    /* منطقة الكاميرا للمسح المباشر */
+    /* شاشة الكاميرا للماسح الضوئي */
+    .scanner-label {
+      color: #003399;
+      font-weight: bold;
+      margin-bottom: 8px;
+      display: block;
+      font-size: 0.95rem;
+      text-align: center;
+    }
+
     #reader {
       width: 100%;
-      min-height: 200px;
+      min-height: 230px;
       border-radius: 10px;
       overflow: hidden;
       border: 2px solid #003399;
-      background-color: #000;
+      background-color: #000000;
       margin-bottom: 15px;
     }
 
@@ -102,7 +110,7 @@
     }
 
     .list-box {
-      max-height: 150px;
+      max-height: 160px;
       min-height: 80px;
       overflow-y: auto;
       background: #f8f9fa;
@@ -151,16 +159,17 @@
     <h2 class="company-title">Al Zajel Express Trading Company</h2>
   </div>
 
-  <!-- 1. الكاميرا المباشرة بدلاً من كتابة الرقم -->
+  <!-- الكاميرا / الماسح الضوئي المباشر -->
+  <span class="scanner-label">📷 الماسح الضوئي لـ (AWBNUMBER)</span>
   <div id="reader"></div>
 
-  <!-- 2. اختيار صورة وحظر أرقام الجوال -->
+  <!-- اختيار صورة من المعرض -->
   <label class="file-btn">
-    📷 / 📁 اختيار ملف (صورة الشحنة)
-    <input type="file" id="attachedFile" accept="image/*" style="display: none;" onchange="processImageFile(event)">
+    📁 اختيار صورة الشحنة من الملفات
+    <input type="file" id="imageInput" accept="image/*" style="display: none;" onchange="processFileImage(event)">
   </label>
 
-  <div id="status" class="status-msg">جاري المعالجة...</div>
+  <div id="status" class="status-msg">جاري معالجة الصورة...</div>
 
   <div class="counter-box">
     عدد الشحنات المسجلة: <span id="count">0</span>
@@ -168,7 +177,7 @@
 
   <div class="list-box" id="scannedList"></div>
 
-  <button class="btn-action" onclick="exportToExcel()">تصدير Excel (CSV)</button>
+  <button class="btn-action" onclick="exportToCSV()">تصدير Excel (CSV)</button>
   <button class="btn-action btn-clear" onclick="clearList()">مسح القائمة</button>
 </div>
 
@@ -176,45 +185,57 @@
   let shipments = [];
   let html5QrCode;
 
-  // تشغيل الكاميرا التلقائي عند فتح الصفحة
+  // تشغيل الماسح الضوئي بالكاميرا فور فتح الصفحة
   window.onload = function() {
     if (typeof Html5Qrcode !== 'undefined') {
       html5QrCode = new Html5Qrcode("reader");
       html5QrCode.start(
         { facingMode: "environment" },
-        { fps: 10, qrbox: { width: 250, height: 150 } },
+        { fps: 15, qrbox: { width: 250, height: 150 } },
         (decodedText) => {
-          // التحقق أن الممسوح ليس رقم جوال
-          if (decodedText && isShipmentNumber(decodedText)) {
-            addShipmentToList(decodedText);
+          // فحص واستبعاد أي رقم جوال فور قراءته من الكاميرا
+          if (decodedText && isPureAWBNumber(decodedText)) {
+            addShipment(decodedText);
           }
         },
         () => {}
       ).catch(err => {
-        console.log("الكاميرا تحتاج إذن التشغيل");
+        console.log("الكاميرا تحتاج إذن التفعيل");
       });
     }
   };
 
-  // فحص واستبعاد أرقام الجوال (التي تبدأ بـ 05 أو 9665 أو طولها 10 أرقام وتبدأ بـ 05)
-  function isShipmentNumber(numStr) {
-    const cleanNum = numStr.trim().replace(/\s+/g, '');
+  // دالة فحص وتصفية أرقام الجوال نهائياً
+  function isPureAWBNumber(str) {
+    const cleanStr = str.trim().replace(/[\s\-\+]/g, '');
     
-    // استبعاد أرقام الهواتف السعودية
-    if (/^(05|9665|\+9665)/.test(cleanNum)) {
+    // استبعاد أي رقم يبدأ بـ 05 أو 9665 أو طوله 10 أرقام ويبدأ بـ 05
+    if (/^(05|9665)/.test(cleanStr)) {
+      return false;
+    }
+    if (cleanStr.length === 10 && cleanStr.startsWith('05')) {
       return false;
     }
     return true;
   }
 
-  // قراءة الصور وتصفية أرقام الجوال منها
-  async function processImageFile(event) {
+  // إضافة رقم الشحنة للقائمة فقط إذا كان صحيحاً وغير مكرر
+  function addShipment(code) {
+    const cleanCode = code.trim();
+    if (cleanCode && !shipments.includes(cleanCode)) {
+      shipments.push(cleanCode);
+      updateUI();
+    }
+  }
+
+  // معالجة اختيار الصور واستخراج رقم الشحنة فقط بدون رقم الجوال
+  async function processFileImage(event) {
     const file = event.target.files[0];
     if (!file) return;
 
     const statusEl = document.getElementById('status');
     statusEl.style.display = 'block';
-    statusEl.innerText = 'جاري تحليل الصورة وقراءة رقم الشحنة...';
+    statusEl.innerText = 'جاري تحليل الصورة والتقاط رقم الشحنة...';
 
     try {
       if (typeof Tesseract !== 'undefined') {
@@ -222,13 +243,14 @@
         const ret = await worker.recognize(file);
         await worker.terminate();
 
-        const extractedNumbers = ret.data.text.match(/\b\d{7,20}(-\d+)*\b/g);
+        const numbersFound = ret.data.text.match(/\b\d{6,20}\b/g);
         let addedCount = 0;
 
-        if (extractedNumbers) {
-          extractedNumbers.forEach(num => {
-            if (isShipmentNumber(num)) {
-              if (addShipmentToList(num)) {
+        if (numbersFound) {
+          numbersFound.forEach(num => {
+            if (isPureAWBNumber(num)) {
+              if (!shipments.includes(num)) {
+                shipments.push(num);
                 addedCount++;
               }
             }
@@ -236,23 +258,15 @@
         }
 
         if (addedCount > 0) {
-          statusEl.innerText = `تم استخراج ${addedCount} رقم شحنة (تم استبعاد أرقام الجوال)!`;
+          statusEl.innerText = `تم استخراج ${addedCount} رقم شحنة بنجاح (تم استبعاد أرقام الجوال).`;
         } else {
-          statusEl.innerText = 'لم يتم العثور على رقم شحنة صالح بالصورة.';
+          statusEl.innerText = 'لم يتم العثور على رقم شحنة صالح داخل الصورة.';
         }
+        updateUI();
       }
     } catch (e) {
-      statusEl.innerText = 'حدث خطأ أثناء معالجة الصورة.';
+      statusEl.innerText = 'حدث خطأ أثناء قراءة الصورة.';
     }
-  }
-
-  function addShipmentToList(code) {
-    if (code && !shipments.includes(code)) {
-      shipments.push(code);
-      updateUI();
-      return true;
-    }
-    return false;
   }
 
   function updateUI() {
@@ -262,7 +276,7 @@
     listContainer.scrollTop = listContainer.scrollHeight;
   }
 
-  function exportToExcel() {
+  function exportToCSV() {
     if (shipments.length === 0) {
       alert("لا توجد شحنات مسجلة للتصدير");
       return;
