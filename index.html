@@ -2,20 +2,24 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
+    
+    
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ماسح باركود الشحنات</title>
+     <title>​Zajil Express Trading Company </title>
+    <title>Scan Barcode Shipment </title>
     <!-- مكتبة مسح الباركود للكاميرا -->
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
-    <!-- مكتبة قراءة الباركودات المتعددة من الصور (حل مشكلة رفع الصورة) -->
+    <!-- مكتبة قراءة كافة الباركودات بالصور (استخراج AWB حصراً) -->
     <script src="https://unpkg.com/@zxing/library@latest"></script>
     <!-- مكتبة تصدير ملفات Excel -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    
     <style>
         body { font-family: system-ui, sans-serif; text-align: center; background: #f4f6f9; margin: 0; padding: 20px; }
         .card { max-width: 500px; margin: 0 auto; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
         button, input[type="file"] { margin: 10px 0; padding: 10px 15px; border-radius: 6px; border: 1px solid #ccc; font-size: 16px; cursor: pointer; }
-        .btn-main { background: #007bff; color: white; border: none; width: 100%; }
-        .btn-excel { background: #28a745; color: white; border: none; width: 100%; }
+        .btn-main { background: #007bff; color: white; border: none; width: 100%; font-weight: bold; }
+        .btn-excel { background: #28a745; color: white; border: none; width: 100%; font-weight: bold; }
         #reader { width: 100%; margin-top: 15px; display: none; }
         table { width: 100%; margin-top: 20px; border-collapse: collapse; }
         th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
@@ -24,8 +28,10 @@
 </head>
 <body>
 
-<div class="card">
-    <h2>ماسح باركود الشحنات 📦</h2>
+
+    <div class="card">
+        <h2>​Zajil Express Trading Company</h2>
+    <h2>Scan Barcode Shipment </h2>
     
     <!-- خيار التصوير المباشر -->
     <button class="btn-main" onclick="startCamera()">📷 تشغيل الكاميرا للتصوير</button>
@@ -45,7 +51,7 @@
         <thead>
             <tr>
                 <th>#</th>
-                <th>رقم الشحنة</th>
+                <th>AWBNUMBER</th>
             </tr>
         </thead>
         <tbody id="table-body"></tbody>
@@ -60,7 +66,7 @@
     let shipments = [];
     const html5QrCode = new Html5Qrcode("reader");
 
-    // فحص صارم لاستبعاد أي رقم جوال سعودي (05xxxxxxxx أو 9665xxxxxxxx)
+    // تصفية أرقام الجوال بجميع صيغها (05xxxxxxx / 9665xxxxxxx)
     function isPhoneNumber(rawText) {
         if (!rawText) return true;
         const digitsOnly = rawText.trim().replace(/\D/g, '');
@@ -72,11 +78,10 @@
         return false;
     }
 
-    // دالة إدراج رقم الشحنة
+    // إضافة رقم الشحنة حصراً للذاكرة
     function addShipmentCode(codeText) {
         const cleanText = codeText.trim();
 
-        // تجارب استبعاد رقم الجوال
         if (isPhoneNumber(cleanText)) {
             return false;
         }
@@ -89,7 +94,7 @@
         return false;
     }
 
-    // تحديث الجدول
+    // تحديث الجدول على الشاشة
     function updateTable() {
         const tbody = document.getElementById("table-body");
         tbody.innerHTML = "";
@@ -99,7 +104,7 @@
         document.getElementById("count").innerText = shipments.length;
     }
 
-    // تشغيل كاميرا الجوال
+    // تشغيل الكاميرا
     function startCamera() {
         document.getElementById("reader").style.display = "block";
         html5QrCode.start(
@@ -116,7 +121,7 @@
         );
     }
 
-    // قراءة الصورة المرفوعة وفحص كافة الباركودات الموجودة فيها للوصول لرقم الشحنة
+    // قراءة الصورة المرفوعة واستخراج باركود AWB فقط
     document.getElementById('qr-input-file').addEventListener('change', async e => {
         if (e.target.files.length === 0) return;
         const imageFile = e.target.files[0];
@@ -127,7 +132,6 @@
 
         imgElement.onload = async () => {
             try {
-                // قراءة كل الباركودات الموجودة بالصورة دفعة واحدة
                 const results = await codeReader.decodeMultipleFromImageElement(imgElement);
                 let addedAny = false;
 
@@ -138,39 +142,44 @@
                 }
 
                 if (addedAny) {
-                    alert("تم التقاط رقم الشحنة بنجاح واستبعاد الجوال!");
+                    alert("تم استخراج رقم الشحنة بنجاح من الصورة!");
                 } else {
-                    alert("لم يتم العثور على رقم شحنة جديد داخل الصورة (إما رقم جوال أو مكرر).");
+                    alert("لم يتم العثور على رقم شحنة جديد داخل الصورة.");
                 }
             } catch (err) {
-                // في حال فشل decodeMultiple، تجربة المسح العادي
                 try {
                     const result = await codeReader.decodeFromImageElement(imgElement);
                     if (addShipmentCode(result.text)) {
                         alert("تم مسح رقم الشحنة بنجاح: " + result.text);
                     } else {
-                        alert("الباركود المقروء هو رقم جوال وتم استبعاده.");
+                        alert("الباركود المقروء هو رقم جوال وتم استبعاده تلقائياً.");
                     }
                 } catch (singleErr) {
-                    alert("تعذر قراءة الباركود من الصورة، تأكد من وضوح الصورة.");
+                    alert("تعذر قراءة الباركود من الصورة، تأكد من وضوحها.");
                 }
             }
         };
     });
 
-    // تصدير البيانات إلى Excel
+    // تصدير البيانات إلى Excel بنفس التنسيق المطلوب تماماً (ورقة SaleRent Details وعمود AWBNUMBER)
     function exportToExcel() {
         if (shipments.length === 0) {
             alert("لا توجد شحنات لتصديرها!");
             return;
         }
         
-        const data = shipments.map((num, idx) => ({ "م": idx + 1, "رقم الشحنة": num }));
-        const worksheet = XLSX.utils.json_to_sheet(data);
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, "الشحنات");
+        // بناء الهيكل بنفس المسمى المطلوبة في ملف Shipments.xlsx
+        const data = shipments.map(num => ({ "AWBNUMBER": num }));
         
-        XLSX.writeFile(workbook, "قائمة_الشحنات.xlsx");
+        const worksheet = XLSX.utils.json_to_sheet(data);
+        
+        // ضبط عرض العمود لتسهيل القراءة
+        worksheet['!cols'] = [{ wch: 25 }];
+
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "SaleRent Details");
+        
+        XLSX.writeFile(workbook, "Shipments.xlsx");
     }
 </script>
 
