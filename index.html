@@ -9,6 +9,9 @@
 
     <!-- مكتبة قراءة الباركود -->
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    
+    <!-- مكتبة إنشاء ملفات Excel -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
     <style>
         * {
@@ -33,10 +36,7 @@
             overflow: hidden;
         }
 
-        /* =========================
-           رأس الموقع
-        ========================= */
-
+        /* رأس الموقع */
         .header {
             text-align: center;
             padding: 32px 20px 20px;
@@ -68,16 +68,12 @@
             line-height: 1.4;
         }
 
-        /* =========================
-           المحتوى
-        ========================= */
-
+        /* المحتوى */
         .content {
             padding: 0 25px 35px;
         }
 
         /* الفئة */
-
         .category {
             background: #ffca05;
             color: #003b73;
@@ -91,7 +87,6 @@
         }
 
         /* زر الكاميرا */
-
         .btn-main {
             background: #087ff5;
             color: white;
@@ -114,7 +109,6 @@
         }
 
         /* قارئ الكاميرا */
-
         #reader {
             width: 100%;
             margin-top: 20px;
@@ -123,18 +117,13 @@
             overflow: hidden;
         }
 
-        /* خط */
-
         hr {
             border: 0;
             border-top: 1px solid #ddd;
             margin: 25px 0;
         }
 
-        /* =========================
-           رفع صورة الباركود
-        ========================= */
-
+        /* رفع صورة الباركود */
         .upload-title {
             display: block;
             text-align: center;
@@ -150,7 +139,7 @@
             padding: 12px;
             text-align: center;
             background: #fff;
-            direction: ltr; /* إصلاح تداخل زر اختيار الملف في اللغة العربية */
+            direction: ltr;
         }
 
         .file-box input[type="file"] {
@@ -171,8 +160,6 @@
             color: #495057;
         }
 
-        /* معلومات الباركود */
-
         .info {
             text-align: center;
             color: #666;
@@ -181,10 +168,7 @@
             margin: 20px 0;
         }
 
-        /* =========================
-           العداد
-        ========================= */
-
+        /* العداد */
         .counter {
             background: #f1f5f9;
             padding: 16px;
@@ -195,27 +179,37 @@
             margin-bottom: 20px;
         }
 
-        /* =========================
-           أزرار الحذف
-        ========================= */
-
+        /* أزرار التحكم والعمليات */
         .buttons {
             display: flex;
-            gap: 15px;
+            flex-wrap: wrap;
+            gap: 12px;
             margin-bottom: 25px;
         }
 
-        .btn-delete {
-            flex: 1;
+        .btn-action {
             padding: 15px 10px;
             border-radius: 14px;
-            font-size: 19px;
+            font-size: 18px;
             font-weight: bold;
             cursor: pointer;
             background: #fff;
+            transition: 0.2s;
+        }
+
+        .btn-export {
+            flex: 100%;
+            background: #198754;
+            color: white;
+            border: none;
+        }
+
+        .btn-export:hover {
+            background: #157347;
         }
 
         .btn-clear {
+            flex: 1;
             color: #dc3545;
             border: 2px solid #dc3545;
         }
@@ -225,6 +219,7 @@
         }
 
         .btn-last {
+            flex: 1;
             color: #333;
             border: 2px solid #ccc;
         }
@@ -233,10 +228,7 @@
             background: #f5f5f5;
         }
 
-        /* =========================
-           جدول الشحنات
-        ========================= */
-
+        /* جدول الشحنات */
         .table-wrapper {
             width: 100%;
             overflow-x: auto;
@@ -249,8 +241,7 @@
             background: white;
         }
 
-        th,
-        td {
+        th, td {
             border: 1px solid #ddd;
             padding: 12px 8px;
             text-align: center;
@@ -276,10 +267,7 @@
             color: #005baa;
         }
 
-        /* =========================
-           رسالة الحالة
-        ========================= */
-
+        /* رسالة الحالة */
         #status {
             display: none;
             padding: 14px;
@@ -300,60 +288,18 @@
             color: #dc3545;
         }
 
-        /* =========================
-           الجوال
-        ========================= */
-
         @media (max-width: 600px) {
-            body {
-                padding: 10px 5px;
-            }
-
-            .card {
-                border-radius: 20px;
-            }
-
-            .header {
-                padding: 25px 15px 15px;
-            }
-
-            .company-name {
-                font-size: 19px;
-            }
-
-            .logo {
-                width: 130px;
-                height: 130px;
-            }
-
-            .scanner-title {
-                font-size: 22px;
-            }
-
-            .content {
-                padding: 0 15px 25px;
-            }
-
-            .category {
-                font-size: 20px;
-            }
-
-            .btn-main {
-                font-size: 20px;
-            }
-
-            .upload-title {
-                font-size: 20px;
-            }
-
-            .buttons {
-                gap: 10px;
-            }
-
-            .btn-delete {
-                font-size: 17px;
-                padding: 14px 5px;
-            }
+            body { padding: 10px 5px; }
+            .card { border-radius: 20px; }
+            .header { padding: 25px 15px 15px; }
+            .company-name { font-size: 19px; }
+            .logo { width: 130px; height: 130px; }
+            .scanner-title { font-size: 22px; }
+            .content { padding: 0 15px 25px; }
+            .category { font-size: 20px; }
+            .btn-main { font-size: 20px; }
+            .upload-title { font-size: 20px; }
+            .btn-action { font-size: 16px; padding: 14px 5px; }
         }
     </style>
 </head>
@@ -362,7 +308,6 @@
 
 <div class="card">
 
-    <!-- رأس الموقع -->
     <div class="header">
         <h1 class="company-name">Zajil Express Trading Company</h1>
         <img src="logo.png" class="logo" alt="Zajil">
@@ -371,22 +316,18 @@
 
     <div class="content">
 
-        <!-- الفئة -->
         <div class="category">
             A — AWBNUMBER
         </div>
 
-        <!-- زر الكاميرا -->
         <button class="btn-main" onclick="toggleCamera()">
             📷 تشغيل الكاميرا
         </button>
 
-        <!-- مكان الكاميرا -->
         <div id="reader"></div>
 
         <hr>
 
-        <!-- رفع صورة -->
         <label class="upload-title" for="qr-input-file">
             أو اختر صورة باركود من الجهاز:
         </label>
@@ -395,7 +336,6 @@
             <input type="file" id="qr-input-file" accept="image/*">
         </div>
 
-        <!-- رسالة الحالة -->
         <div id="status"></div>
 
         <div class="info">
@@ -404,18 +344,19 @@
 
         <hr>
 
-        <!-- قائمة الشحنات -->
         <div class="counter">
             قائمة الشحنات (<span id="counter">0</span>)
         </div>
 
-        <!-- أزرار الحذف -->
+        <!-- أزرار الإجراءات والتصدير -->
         <div class="buttons">
-            <button class="btn-delete btn-clear" onclick="deleteAll()">حذف الكل</button>
-            <button class="btn-delete btn-last" onclick="deleteLast()">حذف آخر شحنة</button>
+            <button class="btn-action btn-export" onclick="exportToExcel()">
+                📊 تصدير إلى ملف Excel (.xlsx)
+            </button>
+            <button class="btn-action btn-clear" onclick="deleteAll()">حذف الكل</button>
+            <button class="btn-action btn-last" onclick="deleteLast()">حذف آخر شحنة</button>
         </div>
 
-        <!-- جدول الشحنات -->
         <div class="table-wrapper">
             <table>
                 <thead>
@@ -495,6 +436,26 @@
         saveShipments();
         updateTable();
         showStatus("تمت إضافة الشحنة بنجاح: " + code, "success");
+    }
+
+    /* دالة تصدير الشحنات إلى ملف Excel */
+    function exportToExcel() {
+        if (shipments.length === 0) {
+            showStatus("لا توجد شحنات لتصديرها", "error");
+            return;
+        }
+
+        const data = shipments.map(code => ({ "AWBNUMBER": code }));
+        const worksheet = XLSX.utils.json_to_sheet(data);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "SaleRent Details");
+
+        worksheet["!cols"] = [{ wch: 35 }];
+
+        const fileName = `Zajil_Shipments_${new Date().toISOString().slice(0, 10)}.xlsx`;
+        XLSX.writeFile(workbook, fileName);
+
+        showStatus("تم تحميل ملف Excel بنجاح", "success");
     }
 
     function deleteLast() {
