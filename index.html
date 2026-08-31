@@ -9,9 +9,6 @@
 
     <!-- مكتبة قراءة الباركود -->
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
-    
-    <!-- مكتبة إنشاء ملفات Excel -->
-    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
     <style>
         * {
@@ -22,104 +19,82 @@
             margin: 0;
             padding: 20px 10px;
             background: #f4f7fb;
-            font-family: Arial, Tahoma, sans-serif;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
             color: #111;
         }
 
         .card {
             width: 100%;
-            max-width: 700px;
+            max-width: 500px;
             margin: 0 auto;
             background: #fff;
-            border-radius: 28px;
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
-            overflow: hidden;
+            border-radius: 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+            padding: 25px 20px;
         }
 
         /* رأس الموقع */
         .header {
             text-align: center;
-            padding: 32px 20px 20px;
-            background: #fff;
+            margin-bottom: 20px;
         }
 
         .company-name {
-            margin: 0 0 18px;
+            margin: 0 0 15px;
             color: #111;
-            font-size: 22px;
-            font-weight: 700;
-            line-height: 1.3;
+            font-size: 20px;
+            font-weight: 600;
         }
 
         .logo {
-            width: 150px;
-            height: 150px;
+            width: 140px;
+            height: 140px;
             object-fit: contain;
             display: block;
-            margin: 0 auto 18px;
-            border-radius: 25px;
+            margin: 0 auto 15px;
+            border-radius: 20px;
         }
 
         .scanner-title {
             margin: 0;
             color: #111;
-            font-size: 26px;
+            font-size: 24px;
             font-weight: 700;
-            line-height: 1.4;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
         }
 
-        /* المحتوى */
-        .content {
-            padding: 0 25px 35px;
-        }
-
-        /* الفئة */
-        .category {
-            background: #ffca05;
-            color: #003b73;
-            border-radius: 15px;
-            padding: 15px;
-            text-align: center;
-            font-size: 22px;
-            font-weight: bold;
-            margin: 15px 0 25px;
-            letter-spacing: 1px;
-        }
-
-        /* زر الكاميرا */
+        /* زر الكاميرا الأزرق */
         .btn-main {
-            background: #087ff5;
+            background: #007bff;
             color: white;
             border: none;
             width: 100%;
-            padding: 18px;
-            border-radius: 14px;
-            font-size: 22px;
-            font-weight: bold;
+            padding: 16px;
+            border-radius: 12px;
+            font-size: 20px;
+            font-weight: 600;
             cursor: pointer;
-            transition: 0.2s;
+            margin-top: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
         }
 
-        .btn-main:hover {
-            opacity: 0.92;
-        }
-
-        .btn-main:active {
-            transform: scale(0.99);
-        }
-
-        /* قارئ الكاميرا */
         #reader {
             width: 100%;
-            margin-top: 20px;
+            margin-top: 15px;
             display: none;
-            border-radius: 15px;
+            border-radius: 12px;
             overflow: hidden;
         }
 
         hr {
             border: 0;
-            border-top: 1px solid #ddd;
+            border-top: 1px solid #e5e7eb;
             margin: 25px 0;
         }
 
@@ -127,108 +102,74 @@
         .upload-title {
             display: block;
             text-align: center;
-            font-size: 22px;
-            font-weight: bold;
+            font-size: 20px;
+            font-weight: 700;
             margin-bottom: 15px;
+            color: #111;
         }
 
         .file-box {
             width: 100%;
-            border: 2px solid #d5d5d5;
-            border-radius: 14px;
-            padding: 12px;
-            text-align: center;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            padding: 8px;
             background: #fff;
-            direction: ltr;
+            direction: rtl;
         }
 
         .file-box input[type="file"] {
             width: 100%;
-            font-size: 16px;
-            direction: rtl;
-        }
-
-        .file-box input[type="file"]::file-selector-button {
-            background: #e9ecef;
-            border: 1px solid #ced4da;
-            border-radius: 8px;
-            padding: 10px 18px;
-            margin-left: 10px;
-            cursor: pointer;
-            font-size: 16px;
-            font-weight: bold;
-            color: #495057;
+            font-size: 15px;
         }
 
         .info {
             text-align: center;
-            color: #666;
-            font-size: 15px;
-            line-height: 1.7;
-            margin: 20px 0;
+            color: #71717a;
+            font-size: 14px;
+            line-height: 1.6;
+            margin: 15px 0;
         }
 
         /* العداد */
         .counter {
-            background: #f1f5f9;
-            padding: 16px;
-            border-radius: 14px;
             font-size: 22px;
-            font-weight: bold;
+            font-weight: 700;
             text-align: center;
+            margin-bottom: 20px;
+            color: #111;
+        }
+
+        /* أزرار التحكم */
+        .buttons {
+            display: flex;
+            gap: 12px;
             margin-bottom: 20px;
         }
 
-        /* أزرار التحكم والعمليات */
-        .buttons {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 12px;
-            margin-bottom: 25px;
-        }
-
         .btn-action {
-            padding: 15px 10px;
-            border-radius: 14px;
+            flex: 1;
+            padding: 14px;
+            border-radius: 10px;
             font-size: 18px;
-            font-weight: bold;
+            font-weight: 600;
             cursor: pointer;
-            background: #fff;
+            background: #f8f9fa;
             transition: 0.2s;
         }
 
-        .btn-export {
-            flex: 100%;
-            background: #198754;
-            color: white;
-            border: none;
-        }
-
-        .btn-export:hover {
-            background: #157347;
-        }
-
         .btn-clear {
-            flex: 1;
             color: #dc3545;
-            border: 2px solid #dc3545;
-        }
-
-        .btn-clear:hover {
-            background: #fff5f5;
+            border: 1px solid #dc3545;
+            background: #fff;
         }
 
         .btn-last {
-            flex: 1;
             color: #333;
-            border: 2px solid #ccc;
+            border: 1px solid #ccc;
+            background: #fff;
         }
 
-        .btn-last:hover {
-            background: #f5f5f5;
-        }
-
-        /* جدول الشحنات */
+        /* الجدول */
         .table-wrapper {
             width: 100%;
             overflow-x: auto;
@@ -236,71 +177,32 @@
 
         table {
             width: 100%;
-            margin-top: 10px;
             border-collapse: collapse;
-            background: white;
         }
 
         th, td {
             border: 1px solid #ddd;
-            padding: 12px 8px;
+            padding: 10px;
             text-align: center;
         }
 
         th {
             background: #005baa;
             color: white;
-            font-size: 17px;
-        }
-
-        td {
-            font-size: 16px;
-        }
-
-        td:first-child {
-            font-weight: bold;
-        }
-
-        .awb {
-            direction: ltr;
-            font-weight: bold;
-            color: #005baa;
         }
 
         /* رسالة الحالة */
         #status {
             display: none;
-            padding: 14px;
+            padding: 12px;
             margin-top: 15px;
-            border-radius: 10px;
+            border-radius: 8px;
             text-align: center;
-            font-size: 17px;
             font-weight: bold;
         }
 
-        .success {
-            background: #e8f7ee;
-            color: #198754;
-        }
-
-        .error {
-            background: #fdeaea;
-            color: #dc3545;
-        }
-
-        @media (max-width: 600px) {
-            body { padding: 10px 5px; }
-            .card { border-radius: 20px; }
-            .header { padding: 25px 15px 15px; }
-            .company-name { font-size: 19px; }
-            .logo { width: 130px; height: 130px; }
-            .scanner-title { font-size: 22px; }
-            .content { padding: 0 15px 25px; }
-            .category { font-size: 20px; }
-            .btn-main { font-size: 20px; }
-            .upload-title { font-size: 20px; }
-            .btn-action { font-size: 16px; padding: 14px 5px; }
-        }
+        .success { background: #e8f7ee; color: #198754; }
+        .error { background: #fdeaea; color: #dc3545; }
     </style>
 </head>
 
@@ -314,62 +216,50 @@
         <h2 class="scanner-title">📦 Scan Barcode Shipment</h2>
     </div>
 
-    <div class="content">
+    <button class="btn-main" onclick="toggleCamera()">
+        📷 تشغيل الكاميرا
+    </button>
 
-        <div class="category">
-            A — AWBNUMBER
-        </div>
+    <div id="reader"></div>
 
-        <button class="btn-main" onclick="toggleCamera()">
-            📷 تشغيل الكاميرا
-        </button>
+    <hr>
 
-        <div id="reader"></div>
+    <label class="upload-title" for="qr-input-file">
+        أو اختر صورة باركود من الجهاز:
+    </label>
 
-        <hr>
+    <div class="file-box">
+        <input type="file" id="qr-input-file" accept="image/*">
+    </div>
 
-        <label class="upload-title" for="qr-input-file">
-            أو اختر صورة باركود من الجهاز:
-        </label>
+    <div id="status"></div>
 
-        <div class="file-box">
-            <input type="file" id="qr-input-file" accept="image/*">
-        </div>
+    <div class="info">
+        يدعم QR والباركود الخطي 1D مثل Code 128 و Code 39 و EAN وغيرها حسب دعم الجهاز والمتصفح.
+    </div>
 
-        <div id="status"></div>
+    <hr>
 
-        <div class="info">
-            يدعم QR والباركود الخطي 1D مثل <b>Code 128</b> و <b>Code 39</b> و <b>EAN13</b> وغيرها.
-        </div>
+    <div class="counter">
+        قائمة الشحنات (<span id="counter">0</span>)
+    </div>
 
-        <hr>
+    <div class="buttons">
+        <button class="btn-action btn-clear" onclick="deleteAll()">حذف الكل</button>
+        <button class="btn-action btn-last" onclick="deleteLast()">حذف آخر شحنة</button>
+    </div>
 
-        <div class="counter">
-            قائمة الشحنات (<span id="counter">0</span>)
-        </div>
-
-        <!-- أزرار الإجراءات والتصدير -->
-        <div class="buttons">
-            <button class="btn-action btn-export" onclick="exportToExcel()">
-                📊 تصدير إلى ملف Excel (.xlsx)
-            </button>
-            <button class="btn-action btn-clear" onclick="deleteAll()">حذف الكل</button>
-            <button class="btn-action btn-last" onclick="deleteLast()">حذف آخر شحنة</button>
-        </div>
-
-        <div class="table-wrapper">
-            <table>
-                <thead>
-                    <tr>
-                        <th>#</th>
-                        <th>AWB NUMBER</th>
-                    </tr>
-                </thead>
-                <tbody id="shipmentTable">
-                </tbody>
-            </table>
-        </div>
-
+    <div class="table-wrapper">
+        <table>
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>AWB NUMBER</th>
+                </tr>
+            </thead>
+            <tbody id="shipmentTable">
+            </tbody>
+        </table>
     </div>
 
 </div>
@@ -382,11 +272,7 @@
     window.onload = function () {
         const saved = localStorage.getItem("zajil_shipments");
         if (saved) {
-            try {
-                shipments = JSON.parse(saved);
-            } catch (error) {
-                shipments = [];
-            }
+            try { shipments = JSON.parse(saved); } catch (e) { shipments = []; }
         }
         updateTable();
     };
@@ -400,13 +286,9 @@
         const counter = document.getElementById("counter");
 
         table.innerHTML = "";
-
         shipments.forEach(function (awb, index) {
             const row = document.createElement("tr");
-            row.innerHTML = `
-                <td>${index + 1}</td>
-                <td class="awb">${escapeHtml(awb)}</td>
-            `;
+            row.innerHTML = `<td>${index + 1}</td><td style="direction:ltr; font-weight:bold; color:#005baa;">${escapeHtml(awb)}</td>`;
             table.appendChild(row);
         });
 
@@ -421,66 +303,34 @@
 
     function addShipment(code) {
         code = String(code || "").trim();
-
         if (!code) {
             showStatus("لم يتم العثور على رقم شحنة", "error");
             return;
         }
-
         if (shipments.includes(code)) {
             showStatus("هذه الشحنة موجودة مسبقاً: " + code, "error");
             return;
         }
-
         shipments.push(code);
         saveShipments();
         updateTable();
-        showStatus("تمت إضافة الشحنة بنجاح: " + code, "success");
-    }
-
-    /* دالة تصدير الشحنات إلى ملف Excel */
-    function exportToExcel() {
-        if (shipments.length === 0) {
-            showStatus("لا توجد شحنات لتصديرها", "error");
-            return;
-        }
-
-        const data = shipments.map(code => ({ "AWBNUMBER": code }));
-        const worksheet = XLSX.utils.json_to_sheet(data);
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, "SaleRent Details");
-
-        worksheet["!cols"] = [{ wch: 35 }];
-
-        const fileName = `Zajil_Shipments_${new Date().toISOString().slice(0, 10)}.xlsx`;
-        XLSX.writeFile(workbook, fileName);
-
-        showStatus("تم تحميل ملف Excel بنجاح", "success");
+        showStatus("تمت إضافة الشحنة بنجاح", "success");
     }
 
     function deleteLast() {
-        if (shipments.length === 0) {
-            showStatus("لا توجد شحنات للحذف", "error");
-            return;
-        }
+        if (shipments.length === 0) return;
         shipments.pop();
         saveShipments();
         updateTable();
-        showStatus("تم حذف آخر شحنة", "success");
     }
 
     function deleteAll() {
-        if (shipments.length === 0) {
-            showStatus("لا توجد شحنات للحذف", "error");
-            return;
+        if (shipments.length === 0) return;
+        if (confirm("هل أنت متأكد من حذف جميع الشحنات؟")) {
+            shipments = [];
+            saveShipments();
+            updateTable();
         }
-        if (!confirm("هل أنت متأكد من حذف جميع الشحنات؟")) {
-            return;
-        }
-        shipments = [];
-        saveShipments();
-        updateTable();
-        showStatus("تم حذف جميع الشحنات", "success");
     }
 
     function showStatus(message, type) {
@@ -488,61 +338,42 @@
         status.textContent = message;
         status.className = type;
         status.style.display = "block";
-        setTimeout(function () {
-            status.style.display = "none";
-        }, 3500);
+        setTimeout(() => { status.style.display = "none"; }, 3000);
     }
 
     async function toggleCamera() {
         const reader = document.getElementById("reader");
-
         if (cameraRunning) {
             await stopCamera();
             return;
         }
-
         reader.style.display = "block";
         html5QrCode = new Html5Qrcode("reader");
-
-        const config = {
-            fps: 10,
-            qrbox: { width: 250, height: 150 },
-            rememberLastUsedCamera: true,
-            experimentalFeatures: { useBarCodeDetectorIfSupported: true }
-        };
 
         try {
             await html5QrCode.start(
                 { facingMode: "environment" },
-                config,
+                { fps: 10, qrbox: { width: 250, height: 150 } },
                 function (decodedText) {
                     addShipment(decodedText);
                     stopCamera();
                 },
-                function (errorMessage) {}
+                function (err) {}
             );
-
             cameraRunning = true;
             document.querySelector(".btn-main").textContent = "⛔ إيقاف الكاميرا";
-
-        } catch (error) {
+        } catch (err) {
             reader.style.display = "none";
-            showStatus("تعذر تشغيل الكاميرا. تأكد من السماح للموقع باستخدام الكاميرا.", "error");
+            showStatus("تعذر تشغيل الكاميرا.", "error");
         }
     }
 
     async function stopCamera() {
         if (!html5QrCode) return;
-
         try {
-            if (cameraRunning) {
-                await html5QrCode.stop();
-            }
+            if (cameraRunning) await html5QrCode.stop();
             html5QrCode.clear();
-        } catch (error) {
-            console.log(error);
-        }
-
+        } catch (e) {}
         html5QrCode = null;
         cameraRunning = false;
         document.getElementById("reader").style.display = "none";
@@ -552,18 +383,14 @@
     document.getElementById("qr-input-file").addEventListener("change", async function (event) {
         const file = event.target.files[0];
         if (!file) return;
-
         const scanner = new Html5Qrcode("reader");
-
         try {
             const result = await scanner.scanFile(file, true);
             addShipment(result);
-        } catch (error) {
-            showStatus("لم يتم العثور على باركود واضح داخل الصورة.", "error");
+        } catch (err) {
+            showStatus("لم يتم العثور على باركود في الصورة.", "error");
         } finally {
-            try {
-                await scanner.clear();
-            } catch (e) {}
+            try { await scanner.clear(); } catch (e) {}
         }
         event.target.value = "";
     });
