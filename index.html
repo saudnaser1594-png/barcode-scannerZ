@@ -7,7 +7,9 @@
   
   <!-- مكتبة قراءة الباركود -->
   <script src="https://unpkg.com/html5-qrcode"></script>
-  <!-- مكتبة إنشاء وقراءة ملفات Excel -->
+  <!-- مكتبة استخراج النصوص والأرقام من الصور (OCR) -->
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+  <!-- مكتبة إنشاء ملفات Excel -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
   <style>
@@ -16,7 +18,7 @@
       font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     }
 
-    /* خلفية الشاشة باللون الأصفر */
+    /* خلفية الصفحة باللون الأصفر */
     body {
       background-color: #ffc107;
       margin: 0;
@@ -28,18 +30,18 @@
       direction: rtl;
     }
 
-    /* الكارت الرئيسي */
+    /* الكارت الداخلي بنفس تصميم الصورة */
     .card {
       width: 100%;
-      max-width: 420px;
-      background: #fff9c4; /* أصفر فاتح */
-      border-radius: 16px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-      padding: 20px;
+      max-width: 400px;
+      background: #fffbe6; /* أصفر فاتح جداً هادئ */
+      border-radius: 20px;
       border: 2px solid #0056b3;
+      padding: 20px 15px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
     }
 
-    /* اسم الشركة في أعلى الصفحة باللون الأزرق */
+    /* عنوان الشركة في الأعلى باللون الأزرق */
     .company-title {
       color: #0056b3;
       text-align: center;
@@ -49,60 +51,69 @@
       direction: ltr;
     }
 
+    /* إطار الكاميرا لقراءة الباركود */
     #reader {
       width: 100%;
-      border-radius: 8px;
+      border-radius: 12px;
       overflow: hidden;
       border: 2px solid #0056b3;
-      background-color: #ffffff;
+      background-color: #000000;
       margin-bottom: 15px;
     }
 
-    /* قسم اختيار ملف */
+    /* صندوق اختيار ملف (الصورة) */
     .file-input-container {
       background: #ffffff;
-      border: 1px solid #0056b3;
-      border-radius: 8px;
-      padding: 10px;
+      border: 2px solid #0056b3;
+      border-radius: 12px;
+      padding: 12px;
       margin-bottom: 15px;
       text-align: center;
     }
 
     .file-input-container label {
       display: block;
-      color: #0056b3;
+      color: #0056b3; /* العبارة باللون الأزرق */
       font-weight: bold;
-      margin-bottom: 6px;
-      font-size: 0.9rem;
+      margin-bottom: 8px;
+      font-size: 1rem;
     }
 
     input[type="file"] {
       width: 100%;
-      color: #0056b3;
-      font-size: 0.85rem;
+      color: #0056b3; /* نص اسم الملف باللون الأزرق */
+      font-size: 0.9rem;
       cursor: pointer;
     }
 
-    /* عداد الشحنات - النص أزرق */
-    .counter-box {
-      background-color: #fff3cd;
-      border: 1px solid #0056b3;
-      padding: 12px;
-      border-radius: 8px;
-      text-align: center;
-      font-size: 1rem;
-      font-weight: bold;
+    .status-msg {
       color: #0056b3;
+      font-size: 0.85rem;
+      margin-top: 6px;
+      display: none;
+      font-weight: bold;
+    }
+
+    /* عداد الشحنات المسجلة */
+    .counter-box {
+      background-color: #fffbe6;
+      border: 2px solid #0056b3;
+      padding: 14px;
+      border-radius: 12px;
+      text-align: center;
+      font-size: 1.1rem;
+      font-weight: bold;
+      color: #0056b3; /* العبارة والأرقام باللون الأزرق */
       margin-bottom: 15px;
     }
 
-    /* قائمة الشحنات - الأسماء والأرقام أزرق */
+    /* قائمة عرض أرقام الشحنات */
     .list-box {
-      max-height: 180px;
+      max-height: 150px;
       overflow-y: auto;
       background: #ffffff;
-      border: 1px solid #0056b3;
-      border-radius: 8px;
+      border: 2px solid #0056b3;
+      border-radius: 12px;
       padding: 8px;
       margin-bottom: 15px;
     }
@@ -111,9 +122,10 @@
       padding: 6px 10px;
       border-bottom: 1px solid #ffe082;
       font-size: 0.9rem;
-      color: #0056b3;
+      color: #0056b3; /* الأرقام باللون الأزرق */
       font-weight: 600;
       font-family: monospace;
+      text-align: center;
     }
 
     /* الأزرار باللون الأزرق والنص أصفر */
@@ -123,7 +135,7 @@
       color: #ffc107;
       border: none;
       padding: 14px;
-      border-radius: 8px;
+      border-radius: 10px;
       font-size: 1rem;
       font-weight: bold;
       cursor: pointer;
@@ -144,26 +156,28 @@
 <body>
 
 <div class="card">
-  <!-- الاسم في الأعلى باللون الأزرق -->
+  <!-- العنوان العلوي -->
   <h2 class="company-title">Al Zajel Express Trading Company</h2>
 
-  <!-- نافذة الكاميرا للباركود -->
+  <!-- نافذة ماسح الباركود -->
   <div id="reader"></div>
 
-  <!-- خيار إضافة/رفع ملف -->
+  <!-- صندوق تحميل الملفات والصور -->
   <div class="file-input-container">
-    <label for="excelFile">تحميل ملف شحنات (Excel):</label>
-    <input type="file" id="excelFile" accept=".xlsx, .xls" onchange="importExcel(event)">
+    <label for="imageFile">تحميل ملف شحنات (Image):</label>
+    <input type="file" id="imageFile" accept="image/*" onchange="processImage(event)">
+    <div id="status" class="status-msg">جاري قراءة أرقام الشحنات...</div>
   </div>
 
+  <!-- عداد الشحنات -->
   <div class="counter-box">
     عدد الشحنات المسجلة: <span id="count">0</span>
   </div>
 
-  <div class="list-box" id="scannedList">
-    <!-- الأرقام المقروءة تظهر هنا -->
-  </div>
+  <!-- قائمة الشحنات المسجلة -->
+  <div class="list-box" id="scannedList"></div>
 
+  <!-- أزرار التحكم -->
   <button class="btn-action" onclick="exportToExcel()">تصدير الملف بصيغة Excel</button>
   <button class="btn-action btn-clear" onclick="clearList()">مسح القائمة</button>
 </div>
@@ -172,12 +186,11 @@
   let shipments = [];
   let html5QrCode;
 
-  // تشغيل كاميرا الباركود
   function startScanner() {
     html5QrCode = new Html5Qrcode("reader");
     html5QrCode.start(
       { facingMode: "environment" }, 
-      { fps: 10, qrbox: { width: 250, height: 150 } },
+      { fps: 10, qrbox: { width: 250, height: 140 } },
       (decodedText) => {
         if (decodedText && !shipments.includes(decodedText)) {
           shipments.push(decodedText);
@@ -188,27 +201,37 @@
     );
   }
 
-  // استيراد الشحنات من أي ملف Excel خارجي عند اختياره
-  function importExcel(event) {
+  async function processImage(event) {
     const file = event.target.files[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = function(e) {
-      const data = new Uint8Array(e.target.result);
-      const workbook = XLSX.read(data, { type: 'array' });
-      const firstSheetName = workbook.SheetNames[0];
-      const worksheet = workbook.Sheets[firstSheetName];
-      const json = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+    const statusEl = document.getElementById('status');
+    statusEl.style.display = 'block';
+    statusEl.innerText = 'جاري تحليل الصورة وقراءة الشحنات...';
 
-      json.forEach(row => {
-        if (row[0] && row[0] !== "AWBNUMBER" && !shipments.includes(String(row[0]))) {
-          shipments.push(String(row[0]));
+    try {
+      const worker = await Tesseract.createWorker('eng');
+      const ret = await worker.recognize(file);
+      await worker.terminate();
+
+      const lines = ret.data.text.split('\n');
+      let countAdded = 0;
+
+      lines.forEach(line => {
+        const cleaned = line.trim().replace(/\s+/g, '');
+        if (cleaned.length >= 10 && /\d{10}/.test(cleaned)) {
+          if (!shipments.includes(cleaned)) {
+            shipments.push(cleaned);
+            countAdded++;
+          }
         }
       });
+
+      statusEl.innerText = countAdded > 0 ? `تم إضافة ${countAdded} شحنة بنجاح!` : 'لم يتم العثور على أرقام جديدة.';
       updateUI();
-    };
-    reader.readAsArrayBuffer(file);
+    } catch (err) {
+      statusEl.innerText = 'حدث خطأ أثناء قراءة الملف.';
+    }
   }
 
   function updateUI() {
@@ -218,7 +241,6 @@
     listContainer.scrollTop = listContainer.scrollHeight;
   }
 
-  // تصدير الشحنات بنفس رأس العمود AWBNUMBER
   function exportToExcel() {
     if (shipments.length === 0) {
       alert("لا توجد شحنات مسجلة للتصدير");
@@ -236,6 +258,7 @@
   function clearList() {
     if (confirm("هل تريد مسح جميع الشحنات المسجلة؟")) {
       shipments = [];
+      document.getElementById('status').style.display = 'none';
       updateUI();
     }
   }
