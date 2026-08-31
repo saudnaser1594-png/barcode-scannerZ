@@ -9,9 +9,9 @@
     
     <title>Zajil Express Trading Company</title>
     
-    <!-- مكتبة مسح الباركود للكاميرا -->
+    <!-- مكتبة مسح الباركود للكاميرا والصور -->
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-    <!-- مكتبة قراءة الباركود من الصور -->
+    <!-- مكتبة قراءة الباركود الثانوية -->
     <script src="https://unpkg.com/@zxing/library@0.21.3/umd/index.min.js"></script>
     <!-- مكتبة تصدير ملفات Excel -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -150,99 +150,109 @@
         });
     }
 
-    // محرك معالجة الصور المتعدد لمختلف الظروف (Multi-Pipeline Processor)
-    async function processAndScanImage(imgElement) {
+    // محرك الفحص المتكامل والمتقدم للصور 
+    async function scanFileRobust(imageFile) {
+        let resultsFound = [];
+
+        // 1. المحاولة الأولى بواسطة المحرك التكيفي لـ Html5Qrcode
+        try {
+            if (!html5QrCode) html5QrCode = new Html5Qrcode("reader");
+            const res = await html5QrCode.scanFile(imageFile, true);
+            if (res) resultsFound.push(res);
+        } catch (e) {}
+
+        if (resultsFound.length > 0) return resultsFound;
+
+        // 2. المحاولة الثانية بواسطة مكتبة ZXing المباشرة
         const codeReader = new ZXing.BrowserMultiFormatReader();
-        
-        // 1. فحص مباشر للصورة الأصلية
-        try {
-            const results = await codeReader.decodeMultipleFromImageElement(imgElement);
-            return results.map(r => r.text);
-        } catch (e) {}
+        const imgElement = document.createElement('img');
+        imgElement.src = URL.createObjectURL(imageFile);
+        await new Promise(r => imgElement.onload = r);
 
         try {
-            const single = await codeReader.decodeFromImageElement(imgElement);
-            return [single.text];
-        } catch (e) {}
+            const zxingRes = await codeReader.decodeMultipleFromImageElement(imgElement);
+            zxingRes.forEach(r => resultsFound.push(r.text));
+        } catch (e) {
+            try {
+                const singleRes = await codeReader.decodeFromImageElement(imgElement);
+                resultsFound.push(singleRes.text);
+            } catch (err) {}
+        }
 
-        // 2. معالجة تحسين التباين وعزل الجداول (Contrast & Thresholding)
+        if (resultsFound.length > 0) return resultsFound;
+
+        // 3. المحاولة الثالثة: معالجة الصورة واقتطاع الهوامش لتجاوز الجداول والإطارات
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
-        const maxDim = 1200;
-        let scale = Math.min(maxDim / imgElement.naturalWidth, maxDim / imgElement.naturalHeight, 1);
-        
-        canvas.width = imgElement.naturalWidth * scale;
+
+        // أبعاد القياس
+        const targetWidth = 1600;
+        const scale = targetWidth / imgElement.naturalWidth;
+        canvas.width = targetWidth;
         canvas.height = imgElement.naturalHeight * scale;
+
         ctx.drawImage(imgElement, 0, 0, canvas.width, canvas.height);
 
-        // تعديل الألوان والألوان الثنائية
-        let imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        let data = imgData.data;
-        for (let i = 0; i < data.length; i += 4) {
-            let avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
-            let v = avg > 120 ? 255 : 0;
-            data[i] = data[i + 1] = data[i + 2] = v;
-        }
-        ctx.putImageData(imgData, 0, 0);
+        // قص هامش بنسبة 5% من الأطراف لإلغاء الإطارات الخارجية المتصلة بالباركود
+        const cropX = canvas.width * 0.05;
+        const cropY = canvas.height * 0.05;
+        const cropW = canvas.width * 0.9;
+        const cropH = canvas.height * 0.9;
 
-        let processedImg = new Image();
-        processedImg.src = canvas.toDataURL();
+        const cropCanvas = document.createElement('canvas');
+        cropCanvas.width = cropW;
+        cropCanvas.height = cropH;
+        const cropCtx = cropCanvas.getContext('2d');
+        cropCtx.drawImage(canvas, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
+
+        // تحسين التباين الرمادي التكيّفي
+        const imgData = cropCtx.getImageData(0, 0, cropW, cropH);
+        const data = imgData.data;
+        for (let i = 0; i < data.length; i += 4) {
+            let gray = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+            // رفع التباين
+            gray = gray < 110 ? Math.max(0, gray - 30) : Math.min(255, gray + 30);
+            data[i] = data[i + 1] = data[i + 2] = gray;
+        }
+        cropCtx.putImageData(imgData, 0, 0);
+
+        const processedImg = new Image();
+        processedImg.src = cropCanvas.toDataURL();
         await new Promise(r => processedImg.onload = r);
 
         try {
-            const results = await codeReader.decodeMultipleFromImageElement(processedImg);
-            return results.map(r => r.text);
-        } catch (e) {}
-
-        // 3. التدوير التلقائي للزوايا (Rotation Fallback) عند كبر زاوية الالتقاط
-        for (let angle of [90, 270]) {
-            const rotCanvas = document.createElement('canvas');
-            const rotCtx = rotCanvas.getContext('2d');
-            rotCanvas.width = canvas.height;
-            rotCanvas.height = canvas.width;
-            
-            rotCtx.translate(rotCanvas.width / 2, rotCanvas.height / 2);
-            rotCtx.rotate((angle * Math.PI) / 180);
-            rotCtx.drawImage(canvas, -canvas.width / 2, -canvas.height / 2);
-
-            let rotImg = new Image();
-            rotImg.src = rotCanvas.toDataURL();
-            await new Promise(r => rotImg.onload = r);
-
+            const zxingCropRes = await codeReader.decodeMultipleFromImageElement(processedImg);
+            zxingCropRes.forEach(r => resultsFound.push(r.text));
+        } catch (e) {
             try {
-                const results = await codeReader.decodeMultipleFromImageElement(rotImg);
-                return results.map(r => r.text);
-            } catch (e) {}
+                const singleCrop = await codeReader.decodeFromImageElement(processedImg);
+                resultsFound.push(singleCrop.text);
+            } catch (err) {}
         }
 
-        return [];
+        return resultsFound;
     }
 
     document.getElementById('qr-input-file').addEventListener('change', async e => {
         if (e.target.files.length === 0) return;
         const imageFile = e.target.files[0];
         
-        const imgElement = document.createElement('img');
-        imgElement.src = URL.createObjectURL(imageFile);
+        const scannedTexts = await scanFileRobust(imageFile);
+        let addedAny = false;
 
-        imgElement.onload = async () => {
-            const scannedTexts = await processAndScanImage(imgElement);
-            let addedAny = false;
-
-            for (let text of scannedTexts) {
-                if (addShipmentCode(text)) {
-                    addedAny = true;
-                }
+        for (let text of scannedTexts) {
+            if (addShipmentCode(text)) {
+                addedAny = true;
             }
+        }
 
-            if (addedAny) {
-                alert("تم استخراج رقم الشحنة بنجاح من الصورة!");
-            } else if (scannedTexts.length > 0) {
-                alert("الباركود المقروء هو رقم جوال وتم استبعاده تلقائياً.");
-            } else {
-                alert("تعذر قراءة الباركود، يرجى التأكد من اختيار صورة واضحة.");
-            }
-        };
+        if (addedAny) {
+            alert("تم استخراج رقم الشحنة بنجاح من الصورة!");
+        } else if (scannedTexts.length > 0) {
+            alert("الباركود المقروء هو رقم جوال وتم استبعاده تلقائياً.");
+        } else {
+            alert("تعذر قراءة الباركود، يرجى التأكد من اختيار صورة واضحة.");
+        }
     });
 
     function exportToExcel() {
