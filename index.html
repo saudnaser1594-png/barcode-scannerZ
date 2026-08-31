@@ -4,8 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ماسح باركود الشحنات</title>
-    <!-- مكتبة مسح الباركود -->
+    <!-- مكتبة مسح الباركود للكاميرا -->
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <!-- مكتبة قراءة الباركودات المتعددة من الصور (حل مشكلة رفع الصورة) -->
+    <script src="https://unpkg.com/@zxing/library@latest"></script>
     <!-- مكتبة تصدير ملفات Excel -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
@@ -21,9 +23,6 @@
     </style>
 </head>
 <body>
-
-<!-- عنصر افتراضي لمسح الملفات دون التعارض مع الكاميرا -->
-<div id="file-reader-temp" style="display:none;"></div>
 
 <div class="card">
     <h2>ماسح باركود الشحنات 📦</h2>
@@ -61,42 +60,33 @@
     let shipments = [];
     const html5QrCode = new Html5Qrcode("reader");
 
-    // دالة الفحص والتأكد من أن النص الممسوح ليس رقم جوال
+    // فحص صارم لاستبعاد أي رقم جوال سعودي (05xxxxxxxx أو 9665xxxxxxxx)
     function isPhoneNumber(rawText) {
         if (!rawText) return true;
-        
-        // استخراج الأرقام فقط لاستبعاد المسافات والرموز مثل +
         const digitsOnly = rawText.trim().replace(/\D/g, '');
 
-        // 1. استبعاد أرقام الجوال المحلية (10 أرقام تبدأ بـ 05)
         if (digitsOnly.length === 10 && digitsOnly.startsWith('05')) return true;
-        
-        // 2. استبعاد أرقام الجوال الدولية (12-14 رقم تبدأ بـ 9665 أو 009665)
         if ((digitsOnly.length === 12 || digitsOnly.length === 13 || digitsOnly.length === 14) && /^(9665|009665)/.test(digitsOnly)) return true;
-
-        // 3. استبعاد النصوص التي تحوي كلمات هاتف
-        if (/(\+?9665|05\d{8})/i.test(rawText) || rawText.toLowerCase().includes('tel') || rawText.toLowerCase().includes('phone')) return true;
+        if (/(\+?9665|05\d{8})/i.test(rawText)) return true;
 
         return false;
     }
 
-    // إضافة الرقم إلى القائمة عند النجاح (مع الفلترة)
-    function onScanSuccess(decodedText) {
-        const cleanText = decodedText.trim();
+    // دالة إدراج رقم الشحنة
+    function addShipmentCode(codeText) {
+        const cleanText = codeText.trim();
 
-        // تصفية أرقام الجوال
+        // تجارب استبعاد رقم الجوال
         if (isPhoneNumber(cleanText)) {
-            alert("⚠️ تم استبعاد هذا الباركود لأنه رقم جوال العميل وليس رقم الشحنة!");
-            return;
+            return false;
         }
 
         if (!shipments.includes(cleanText)) {
             shipments.push(cleanText);
             updateTable();
-            alert("تم مسح رقم الشحنة بنجاح: " + cleanText);
-        } else {
-            alert("هذا الرقم تم مسحه سابقاً!");
+            return true;
         }
+        return false;
     }
 
     // تحديث الجدول
@@ -109,39 +99,66 @@
         document.getElementById("count").innerText = shipments.length;
     }
 
-    // تشغيل كاميرا الجوال/الجهاز
+    // تشغيل كاميرا الجوال
     function startCamera() {
         document.getElementById("reader").style.display = "block";
         html5QrCode.start(
             { facingMode: "environment" }, 
             { fps: 10, qrbox: { width: 250, height: 150 } },
             (decodedText) => {
-                onScanSuccess(decodedText);
-                html5QrCode.stop(); // إيقاف الكاميرا بعد القراءة
-                document.getElementById("reader").style.display = "none";
+                if (addShipmentCode(decodedText)) {
+                    alert("تم مسح رقم الشحنة بنجاح: " + decodedText);
+                    html5QrCode.stop();
+                    document.getElementById("reader").style.display = "none";
+                }
             },
-            (errorMessage) => { /* تجاهل الأخطاء أثناء البحث */ }
+            (errorMessage) => {}
         );
     }
 
-    // قراءة الباركود من ملف صورة مرفوع بواسطة عنصر محايد مستقل
-    document.getElementById('qr-input-file').addEventListener('change', e => {
-        if (e.target.files.length == 0) return;
+    // قراءة الصورة المرفوعة وفحص كافة الباركودات الموجودة فيها للوصول لرقم الشحنة
+    document.getElementById('qr-input-file').addEventListener('change', async e => {
+        if (e.target.files.length === 0) return;
         const imageFile = e.target.files[0];
         
-        // استخدام كائن مستقل لرفع الصور لعدم التعارض مع الكاميرا
-        const fileScanner = new Html5Qrcode("file-reader-temp");
+        const codeReader = new ZXing.BrowserMultiFormatReader();
+        const imgElement = document.createElement('img');
+        imgElement.src = URL.createObjectURL(imageFile);
 
-        fileScanner.scanFile(imageFile, true)
-            .then(decodedText => {
-                onScanSuccess(decodedText);
-            })
-            .catch(err => {
-                alert("تعذر قراءة الباركود من الصورة، تأكد من وضوح الصورة وتوجيهها على باركود الشحنة.");
-            });
+        imgElement.onload = async () => {
+            try {
+                // قراءة كل الباركودات الموجودة بالصورة دفعة واحدة
+                const results = await codeReader.decodeMultipleFromImageElement(imgElement);
+                let addedAny = false;
+
+                for (let result of results) {
+                    if (addShipmentCode(result.text)) {
+                        addedAny = true;
+                    }
+                }
+
+                if (addedAny) {
+                    alert("تم التقاط رقم الشحنة بنجاح واستبعاد الجوال!");
+                } else {
+                    alert("لم يتم العثور على رقم شحنة جديد داخل الصورة (إما رقم جوال أو مكرر).");
+                }
+            } catch (err) {
+                // في حال فشل decodeMultiple، تجربة المسح العادي
+                try {
+                    const result = await codeReader.decodeFromImageElement(imgElement);
+                    if (addShipmentCode(result.text)) {
+                        alert("تم مسح رقم الشحنة بنجاح: " + result.text);
+                    } else {
+                        alert("الباركود المقروء هو رقم جوال وتم استبعاده.");
+                    }
+                } catch (singleErr) {
+                    alert("تعذر قراءة الباركود من الصورة، تأكد من وضوح الصورة.");
+                }
+            }
+        };
     });
 
-    // تصدير البيانات إلى ملف Excel (.xlsx)
+    // تصدير البيانات إلى Excel
     function exportToExcel() {
         if (shipments.length === 0) {
             alert("لا توجد شحنات لتصديرها!");
