@@ -4,6 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Al Zajel Express Trading Company</title>
+
+  <!-- مكتبات القراءة والمسح الضوئي -->
+  <script src="https://unpkg.com/html5-qrcode"></script>
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
   <style>
     * {
       box-sizing: border-box;
@@ -16,7 +22,7 @@
       padding: 15px;
       display: flex;
       justify-content: center;
-      align-items: flex-start;
+      align-items: center;
       min-height: 100vh;
       direction: rtl;
     }
@@ -29,7 +35,6 @@
       border: 2px solid #003399;
       padding: 20px;
       box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-      margin-top: 10px;
     }
 
     .header-banner {
@@ -49,43 +54,38 @@
       direction: ltr;
     }
 
-    .input-group {
-      margin-bottom: 12px;
-    }
-
-    .input-group label {
-      display: block;
-      color: #003399;
-      font-weight: bold;
-      margin-bottom: 6px;
-      font-size: 0.9rem;
-    }
-
-    .text-input {
+    /* منطقة الكاميرا للمسح المباشر */
+    #reader {
       width: 100%;
-      padding: 12px;
+      min-height: 200px;
+      border-radius: 10px;
+      overflow: hidden;
       border: 2px solid #003399;
-      border-radius: 8px;
-      font-size: 1rem;
-      direction: ltr;
-      text-align: center;
+      background-color: #000;
+      margin-bottom: 15px;
     }
 
     .file-btn {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 8px;
+      display: block;
       width: 100%;
       background-color: #fffdf2;
       color: #003399;
       border: 2px dashed #003399;
       padding: 12px;
       border-radius: 10px;
-      font-size: 1rem;
+      font-size: 0.95rem;
       font-weight: bold;
       cursor: pointer;
-      margin-bottom: 15px;
+      margin-bottom: 12px;
+      text-align: center;
+    }
+
+    .status-msg {
+      color: #003399;
+      font-size: 0.85rem;
+      margin-bottom: 10px;
+      display: none;
+      font-weight: bold;
       text-align: center;
     }
 
@@ -151,17 +151,16 @@
     <h2 class="company-title">Al Zajel Express Trading Company</h2>
   </div>
 
-  <div class="input-group">
-    <label for="barcodeInput">إدخال / مسح رقم الشحنة (AWBNUMBER):</label>
-    <input type="text" id="barcodeInput" class="text-input" placeholder="امسح أو اكتب الرقم هنا..." autofocus onkeydown="checkEnter(event)">
-  </div>
+  <!-- 1. الكاميرا المباشرة بدلاً من كتابة الرقم -->
+  <div id="reader"></div>
 
-  <button class="btn-action" onclick="addShipment()">إضافة الشحنة للقائمة</button>
-
+  <!-- 2. اختيار صورة وحظر أرقام الجوال -->
   <label class="file-btn">
-    📁 اختيار ملف / صورة
-    <input type="file" id="imageInput" accept="image/*" style="display: none;" onchange="handleImageSelect(event)">
+    📷 / 📁 اختيار ملف (صورة الشحنة)
+    <input type="file" id="attachedFile" accept="image/*" style="display: none;" onchange="processImageFile(event)">
   </label>
+
+  <div id="status" class="status-msg">جاري المعالجة...</div>
 
   <div class="counter-box">
     عدد الشحنات المسجلة: <span id="count">0</span>
@@ -169,74 +168,91 @@
 
   <div class="list-box" id="scannedList"></div>
 
-  <button class="btn-action" onclick="exportToCSV()">تصدير Excel (CSV)</button>
+  <button class="btn-action" onclick="exportToExcel()">تصدير Excel (CSV)</button>
   <button class="btn-action btn-clear" onclick="clearList()">مسح القائمة</button>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/zxing-js-library@latest/umd/index.min.js"></script>
-
 <script>
   let shipments = [];
+  let html5QrCode;
 
-  function addShipment() {
-    const input = document.getElementById('barcodeInput');
-    const val = input.value.trim();
-
-    if (val && !shipments.includes(val)) {
-      shipments.push(val);
-      input.value = '';
-      updateUI();
+  // تشغيل الكاميرا التلقائي عند فتح الصفحة
+  window.onload = function() {
+    if (typeof Html5Qrcode !== 'undefined') {
+      html5QrCode = new Html5Qrcode("reader");
+      html5QrCode.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: { width: 250, height: 150 } },
+        (decodedText) => {
+          // التحقق أن الممسوح ليس رقم جوال
+          if (decodedText && isShipmentNumber(decodedText)) {
+            addShipmentToList(decodedText);
+          }
+        },
+        () => {}
+      ).catch(err => {
+        console.log("الكاميرا تحتاج إذن التشغيل");
+      });
     }
-    input.focus();
+  };
+
+  // فحص واستبعاد أرقام الجوال (التي تبدأ بـ 05 أو 9665 أو طولها 10 أرقام وتبدأ بـ 05)
+  function isShipmentNumber(numStr) {
+    const cleanNum = numStr.trim().replace(/\s+/g, '');
+    
+    // استبعاد أرقام الهواتف السعودية
+    if (/^(05|9665|\+9665)/.test(cleanNum)) {
+      return false;
+    }
+    return true;
   }
 
-  function checkEnter(e) {
-    if (e.key === 'Enter') {
-      addShipment();
-    }
-  }
-
-  // قراءة رقم الشحنة والباركود فور اختيار الصورة
-  function handleImageSelect(event) {
+  // قراءة الصور وتصفية أرقام الجوال منها
+  async function processImageFile(event) {
     const file = event.target.files[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = function(e) {
-      const img = new Image();
-      img.src = e.target.result;
-      img.onload = function() {
-        if (window.ZXing) {
-          const codeReader = new ZXing.BrowserMultiFormatReader();
-          codeReader.decodeFromImageElement(img)
-            .then(result => {
-              if (result && result.text) {
-                if (!shipments.includes(result.text)) {
-                  shipments.push(result.text);
-                  alert("تم قراءة رقم الشحنة بنجاح: " + result.text);
-                  updateUI();
-                } else {
-                  alert("رقم الشحنة مسجل مسبقاً!");
-                }
+    const statusEl = document.getElementById('status');
+    statusEl.style.display = 'block';
+    statusEl.innerText = 'جاري تحليل الصورة وقراءة رقم الشحنة...';
+
+    try {
+      if (typeof Tesseract !== 'undefined') {
+        const worker = await Tesseract.createWorker('eng');
+        const ret = await worker.recognize(file);
+        await worker.terminate();
+
+        const extractedNumbers = ret.data.text.match(/\b\d{7,20}(-\d+)*\b/g);
+        let addedCount = 0;
+
+        if (extractedNumbers) {
+          extractedNumbers.forEach(num => {
+            if (isShipmentNumber(num)) {
+              if (addShipmentToList(num)) {
+                addedCount++;
               }
-            })
-            .catch(err => {
-              // في حال لم يكن باركود تم استخراج أرقام اسم الملف
-              let fileNameNumbers = file.name.match(/\d{8,20}/g);
-              if (fileNameNumbers && fileNameNumbers.length > 0) {
-                fileNameNumbers.forEach(num => {
-                  if (!shipments.includes(num)) shipments.push(num);
-                });
-                updateUI();
-                alert("تم إضافة الشحنة من الملف!");
-              } else {
-                alert("تعذر قراءة رقم الشحنة من هذه الصورة، يرجى كتابتها أو مسحها بالباركود.");
-              }
-            });
+            }
+          });
         }
-      };
-    };
-    reader.readAsDataURL(file);
+
+        if (addedCount > 0) {
+          statusEl.innerText = `تم استخراج ${addedCount} رقم شحنة (تم استبعاد أرقام الجوال)!`;
+        } else {
+          statusEl.innerText = 'لم يتم العثور على رقم شحنة صالح بالصورة.';
+        }
+      }
+    } catch (e) {
+      statusEl.innerText = 'حدث خطأ أثناء معالجة الصورة.';
+    }
+  }
+
+  function addShipmentToList(code) {
+    if (code && !shipments.includes(code)) {
+      shipments.push(code);
+      updateUI();
+      return true;
+    }
+    return false;
   }
 
   function updateUI() {
@@ -246,7 +262,7 @@
     listContainer.scrollTop = listContainer.scrollHeight;
   }
 
-  function exportToCSV() {
+  function exportToExcel() {
     if (shipments.length === 0) {
       alert("لا توجد شحنات مسجلة للتصدير");
       return;
@@ -265,6 +281,7 @@
   function clearList() {
     if (confirm("هل تريد مسح جميع الشحنات المسجلة؟")) {
       shipments = [];
+      document.getElementById('status').style.display = 'none';
       updateUI();
     }
   }
