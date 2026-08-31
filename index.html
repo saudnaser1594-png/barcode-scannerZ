@@ -4,9 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Al Zajel Express Trading Company</title>
-
-  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
-
   <style>
     * {
       box-sizing: border-box;
@@ -19,7 +16,7 @@
       padding: 15px;
       display: flex;
       justify-content: center;
-      align-items: center;
+      align-items: flex-start;
       min-height: 100vh;
       direction: rtl;
     }
@@ -32,6 +29,7 @@
       border: 2px solid #003399;
       padding: 20px;
       box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+      margin-top: 10px;
     }
 
     .header-banner {
@@ -73,39 +71,22 @@
       text-align: center;
     }
 
-    .file-input-container {
-      background: #fffdf2;
+    .file-btn {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+      background-color: #fffdf2;
+      color: #003399;
       border: 2px dashed #003399;
-      border-radius: 10px;
       padding: 12px;
+      border-radius: 10px;
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
       margin-bottom: 15px;
       text-align: center;
-    }
-
-    .file-label {
-      display: block;
-      color: #003399;
-      font-weight: bold;
-      margin-bottom: 8px;
-      font-size: 0.95rem;
-    }
-
-    /* مدخل اختيار الملف ظاهر ويعمل مباشرة */
-    .file-input-field {
-      width: 100%;
-      padding: 8px;
-      background: #ffffff;
-      border: 1px solid #003399;
-      border-radius: 6px;
-      cursor: pointer;
-    }
-
-    .status-msg {
-      color: #003399;
-      font-size: 0.85rem;
-      margin-top: 8px;
-      display: none;
-      font-weight: bold;
     }
 
     .counter-box {
@@ -177,11 +158,10 @@
 
   <button class="btn-action" onclick="addShipment()">إضافة الشحنة للقائمة</button>
 
-  <div class="file-input-container">
-    <span class="file-label">📁 اختيار ملف:</span>
-    <input type="file" id="attachedFile" class="file-input-field" accept="image/*" onchange="processFileImage(event)">
-    <div id="status" class="status-msg">جاري معالجة الملف...</div>
-  </div>
+  <label class="file-btn">
+    📁 اختيار ملف / صورة
+    <input type="file" id="imageInput" accept="image/*" style="display: none;" onchange="handleImageSelect(event)">
+  </label>
 
   <div class="counter-box">
     عدد الشحنات المسجلة: <span id="count">0</span>
@@ -192,6 +172,8 @@
   <button class="btn-action" onclick="exportToCSV()">تصدير Excel (CSV)</button>
   <button class="btn-action btn-clear" onclick="clearList()">مسح القائمة</button>
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/zxing-js-library@latest/umd/index.min.js"></script>
 
 <script>
   let shipments = [];
@@ -214,46 +196,47 @@
     }
   }
 
-  // قراءة الأرقام من الصورة مباشرة وتوجيهها للقائمة
-  async function processFileImage(event) {
+  // قراءة رقم الشحنة والباركود فور اختيار الصورة
+  function handleImageSelect(event) {
     const file = event.target.files[0];
     if (!file) return;
 
-    const statusEl = document.getElementById('status');
-    statusEl.style.display = 'block';
-    statusEl.innerText = 'جاري تحليل الصورة واستخراج أرقام الشحنات...';
-
-    try {
-      if (typeof Tesseract !== 'undefined') {
-        const worker = await Tesseract.createWorker('eng');
-        const ret = await worker.recognize(file);
-        await worker.terminate();
-
-        const lines = ret.data.text.split('\n');
-        let countAdded = 0;
-
-        lines.forEach(line => {
-          // استخراج أرقام الشحنات المتسلسلة
-          const matches = line.match(/\b\d{6,20}(-\d+)*\b/g);
-          if (matches) {
-            matches.forEach(code => {
-              if (!shipments.includes(code)) {
-                shipments.push(code);
-                countAdded++;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const img = new Image();
+      img.src = e.target.result;
+      img.onload = function() {
+        if (window.ZXing) {
+          const codeReader = new ZXing.BrowserMultiFormatReader();
+          codeReader.decodeFromImageElement(img)
+            .then(result => {
+              if (result && result.text) {
+                if (!shipments.includes(result.text)) {
+                  shipments.push(result.text);
+                  alert("تم قراءة رقم الشحنة بنجاح: " + result.text);
+                  updateUI();
+                } else {
+                  alert("رقم الشحنة مسجل مسبقاً!");
+                }
+              }
+            })
+            .catch(err => {
+              // في حال لم يكن باركود تم استخراج أرقام اسم الملف
+              let fileNameNumbers = file.name.match(/\d{8,20}/g);
+              if (fileNameNumbers && fileNameNumbers.length > 0) {
+                fileNameNumbers.forEach(num => {
+                  if (!shipments.includes(num)) shipments.push(num);
+                });
+                updateUI();
+                alert("تم إضافة الشحنة من الملف!");
+              } else {
+                alert("تعذر قراءة رقم الشحنة من هذه الصورة، يرجى كتابتها أو مسحها بالباركود.");
               }
             });
-          }
-        });
-
-        statusEl.innerText = countAdded > 0 ? `تم إضافة ${countAdded} شحنة بنجاح!` : 'لم يتم العثور على أرقام شحنات بالصورة.';
-      } else {
-        // إذا تعذر تحميل المكتبة يتم إضافة اسم الملف أو التنبيه
-        statusEl.innerText = 'تم رفع الملف بنجاح.';
-      }
-      updateUI();
-    } catch (err) {
-      statusEl.innerText = 'حدث خطأ أثناء قراءة الملف.';
-    }
+        }
+      };
+    };
+    reader.readAsDataURL(file);
   }
 
   function updateUI() {
@@ -282,7 +265,6 @@
   function clearList() {
     if (confirm("هل تريد مسح جميع الشحنات المسجلة؟")) {
       shipments = [];
-      document.getElementById('status').style.display = 'none';
       updateUI();
     }
   }
