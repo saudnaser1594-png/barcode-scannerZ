@@ -3,14 +3,12 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport"
-          content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <title>Zajil Express Trading Company</title>
 
     <!-- مكتبة قراءة الباركود -->
-    <script src="https://unpkg.com/html5-qrcode"
-            type="text/javascript"></script>
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 
     <style>
         * {
@@ -41,7 +39,7 @@
 
         .header {
             text-align: center;
-            padding: 32px 20px 25px;
+            padding: 32px 20px 20px;
             background: #fff;
         }
 
@@ -65,7 +63,7 @@
         .scanner-title {
             margin: 0;
             color: #111;
-            font-size: 28px;
+            font-size: 26px;
             font-weight: 700;
             line-height: 1.4;
         }
@@ -75,7 +73,7 @@
         ========================= */
 
         .content {
-            padding: 0 30px 35px;
+            padding: 0 25px 35px;
         }
 
         /* الفئة */
@@ -84,11 +82,12 @@
             background: #ffca05;
             color: #003b73;
             border-radius: 15px;
-            padding: 18px;
+            padding: 15px;
             text-align: center;
-            font-size: 25px;
+            font-size: 22px;
             font-weight: bold;
-            margin: 10px 0 25px;
+            margin: 15px 0 25px;
+            letter-spacing: 1px;
         }
 
         /* زر الكاميرا */
@@ -98,9 +97,9 @@
             color: white;
             border: none;
             width: 100%;
-            padding: 19px;
+            padding: 18px;
             border-radius: 14px;
-            font-size: 24px;
+            font-size: 22px;
             font-weight: bold;
             cursor: pointer;
             transition: 0.2s;
@@ -129,7 +128,7 @@
         hr {
             border: 0;
             border-top: 1px solid #ddd;
-            margin: 30px 0;
+            margin: 25px 0;
         }
 
         /* =========================
@@ -139,43 +138,47 @@
         .upload-title {
             display: block;
             text-align: center;
-            font-size: 25px;
+            font-size: 22px;
             font-weight: bold;
-            margin-bottom: 18px;
+            margin-bottom: 15px;
         }
 
         .file-box {
             width: 100%;
             border: 2px solid #d5d5d5;
             border-radius: 14px;
-            padding: 18px;
+            padding: 12px;
             text-align: center;
             background: #fff;
+            direction: ltr; /* إصلاح تداخل زر اختيار الملف في اللغة العربية */
         }
 
         .file-box input[type="file"] {
             width: 100%;
-            font-size: 18px;
+            font-size: 16px;
+            direction: rtl;
         }
 
         .file-box input[type="file"]::file-selector-button {
-            background: #eee;
-            border: 1px solid #aaa;
-            border-radius: 6px;
-            padding: 10px 16px;
+            background: #e9ecef;
+            border: 1px solid #ced4da;
+            border-radius: 8px;
+            padding: 10px 18px;
             margin-left: 10px;
             cursor: pointer;
-            font-size: 17px;
+            font-size: 16px;
+            font-weight: bold;
+            color: #495057;
         }
 
         /* معلومات الباركود */
 
         .info {
             text-align: center;
-            color: #777;
-            font-size: 18px;
-            line-height: 1.8;
-            margin: 25px 0;
+            color: #666;
+            font-size: 15px;
+            line-height: 1.7;
+            margin: 20px 0;
         }
 
         /* =========================
@@ -184,9 +187,9 @@
 
         .counter {
             background: #f1f5f9;
-            padding: 18px;
+            padding: 16px;
             border-radius: 14px;
-            font-size: 25px;
+            font-size: 22px;
             font-weight: bold;
             text-align: center;
             margin-bottom: 20px;
@@ -204,9 +207,9 @@
 
         .btn-delete {
             flex: 1;
-            padding: 17px 10px;
+            padding: 15px 10px;
             border-radius: 14px;
-            font-size: 21px;
+            font-size: 19px;
             font-weight: bold;
             cursor: pointer;
             background: #fff;
@@ -222,7 +225,7 @@
         }
 
         .btn-last {
-            color: #111;
+            color: #333;
             border: 2px solid #ccc;
         }
 
@@ -283,7 +286,7 @@
             margin-top: 15px;
             border-radius: 10px;
             text-align: center;
-            font-size: 18px;
+            font-size: 17px;
             font-weight: bold;
         }
 
@@ -302,46 +305,45 @@
         ========================= */
 
         @media (max-width: 600px) {
-
             body {
                 padding: 10px 5px;
             }
 
             .card {
-                border-radius: 24px;
+                border-radius: 20px;
             }
 
             .header {
-                padding: 30px 15px 20px;
+                padding: 25px 15px 15px;
             }
 
             .company-name {
-                font-size: 20px;
+                font-size: 19px;
             }
 
             .logo {
-                width: 140px;
-                height: 140px;
+                width: 130px;
+                height: 130px;
             }
 
             .scanner-title {
-                font-size: 25px;
+                font-size: 22px;
             }
 
             .content {
-                padding: 0 20px 30px;
+                padding: 0 15px 25px;
             }
 
             .category {
-                font-size: 22px;
+                font-size: 20px;
             }
 
             .btn-main {
-                font-size: 22px;
+                font-size: 20px;
             }
 
             .upload-title {
-                font-size: 22px;
+                font-size: 20px;
             }
 
             .buttons {
@@ -349,8 +351,8 @@
             }
 
             .btn-delete {
-                font-size: 19px;
-                padding: 15px 5px;
+                font-size: 17px;
+                padding: 14px 5px;
             }
         }
     </style>
@@ -360,659 +362,250 @@
 
 <div class="card">
 
-    <!-- =========================
-         رأس الموقع
-    ========================= -->
-
+    <!-- رأس الموقع -->
     <div class="header">
-
-        <h1 class="company-name">
-            Zajil Express Trading Company
-        </h1>
-
-        <img
-            src="logo.png"
-            class="logo"
-            alt="Zajil">
-
-        <h2 class="scanner-title">
-            📦 Scan Barcode Shipment
-        </h2>
-
+        <h1 class="company-name">Zajil Express Trading Company</h1>
+        <img src="logo.png" class="logo" alt="Zajil">
+        <h2 class="scanner-title">📦 Scan Barcode Shipment</h2>
     </div>
-
 
     <div class="content">
 
-        <!-- =========================
-             الفئة
-        ========================= -->
-
+        <!-- الفئة -->
         <div class="category">
             A — AWBNUMBER
         </div>
 
-
-        <!-- =========================
-             تشغيل الكاميرا
-        ========================= -->
-
-        <button
-            class="btn-main"
-            onclick="toggleCamera()">
-
+        <!-- زر الكاميرا -->
+        <button class="btn-main" onclick="toggleCamera()">
             📷 تشغيل الكاميرا
-
         </button>
 
-
         <!-- مكان الكاميرا -->
-
         <div id="reader"></div>
 
-
         <hr>
 
-
-        <!-- =========================
-             رفع صورة
-        ========================= -->
-
-        <label
-            class="upload-title"
-            for="qr-input-file">
-
+        <!-- رفع صورة -->
+        <label class="upload-title" for="qr-input-file">
             أو اختر صورة باركود من الجهاز:
-
         </label>
 
-
         <div class="file-box">
-
-            <input
-                type="file"
-                id="qr-input-file"
-                accept="image/*">
-
+            <input type="file" id="qr-input-file" accept="image/*">
         </div>
 
-
-        <!-- =========================
-             رسالة الحالة
-        ========================= -->
-
+        <!-- رسالة الحالة -->
         <div id="status"></div>
 
-
         <div class="info">
-
-            يدعم QR والباركود الخطي 1D مثل
-            <b>Code 128</b>
-            و
-            <b>Code 39</b>
-            و
-            <b>EAN13</b>
-            وغيرها حسب دعم الجهاز والمتصفح.
-
+            يدعم QR والباركود الخطي 1D مثل <b>Code 128</b> و <b>Code 39</b> و <b>EAN13</b> وغيرها.
         </div>
-
 
         <hr>
 
-
-        <!-- =========================
-             قائمة الشحنات
-        ========================= -->
-
+        <!-- قائمة الشحنات -->
         <div class="counter">
-
-            قائمة الشحنات
-            (<span id="counter">0</span>)
-
+            قائمة الشحنات (<span id="counter">0</span>)
         </div>
-
 
         <!-- أزرار الحذف -->
-
         <div class="buttons">
-
-            <button
-                class="btn-delete btn-clear"
-                onclick="deleteAll()">
-
-                حذف الكل
-
-            </button>
-
-
-            <button
-                class="btn-delete btn-last"
-                onclick="deleteLast()">
-
-                حذف آخر شحنة
-
-            </button>
-
+            <button class="btn-delete btn-clear" onclick="deleteAll()">حذف الكل</button>
+            <button class="btn-delete btn-last" onclick="deleteLast()">حذف آخر شحنة</button>
         </div>
 
-
-        <!-- =========================
-             جدول الشحنات
-        ========================= -->
-
+        <!-- جدول الشحنات -->
         <div class="table-wrapper">
-
             <table>
-
                 <thead>
-
                     <tr>
-
-                        <th>
-                            #
-                        </th>
-
-                        <th>
-                            AWB NUMBER
-                        </th>
-
+                        <th>#</th>
+                        <th>AWB NUMBER</th>
                     </tr>
-
                 </thead>
-
                 <tbody id="shipmentTable">
-
                 </tbody>
-
             </table>
-
         </div>
 
     </div>
 
 </div>
 
-
 <script>
-
-    /* ==========================================
-       المتغيرات
-    ========================================== */
-
     let shipments = [];
-
     let html5QrCode = null;
-
     let cameraRunning = false;
 
-
-    /* ==========================================
-       تحميل الشحنات المحفوظة
-    ========================================== */
-
     window.onload = function () {
-
-        const saved =
-            localStorage.getItem("zajil_shipments");
-
+        const saved = localStorage.getItem("zajil_shipments");
         if (saved) {
-
             try {
-
                 shipments = JSON.parse(saved);
-
             } catch (error) {
-
                 shipments = [];
-
             }
-
         }
-
         updateTable();
-
     };
 
-
-    /* ==========================================
-       حفظ الشحنات
-    ========================================== */
-
     function saveShipments() {
-
-        localStorage.setItem(
-            "zajil_shipments",
-            JSON.stringify(shipments)
-        );
-
+        localStorage.setItem("zajil_shipments", JSON.stringify(shipments));
     }
 
-
-    /* ==========================================
-       تحديث الجدول
-    ========================================== */
-
     function updateTable() {
-
-        const table =
-            document.getElementById("shipmentTable");
-
-        const counter =
-            document.getElementById("counter");
-
+        const table = document.getElementById("shipmentTable");
+        const counter = document.getElementById("counter");
 
         table.innerHTML = "";
 
-
         shipments.forEach(function (awb, index) {
-
-            const row =
-                document.createElement("tr");
-
-
+            const row = document.createElement("tr");
             row.innerHTML = `
-
-                <td>
-                    ${index + 1}
-                </td>
-
-                <td class="awb">
-                    ${escapeHtml(awb)}
-                </td>
-
+                <td>${index + 1}</td>
+                <td class="awb">${escapeHtml(awb)}</td>
             `;
-
-
             table.appendChild(row);
-
         });
 
-
-        counter.textContent =
-            shipments.length;
-
+        counter.textContent = shipments.length;
     }
-
-
-    /* ==========================================
-       حماية النص
-    ========================================== */
 
     function escapeHtml(text) {
-
-        const div =
-            document.createElement("div");
-
+        const div = document.createElement("div");
         div.textContent = text;
-
         return div.innerHTML;
-
     }
-
-
-    /* ==========================================
-       إضافة شحنة
-    ========================================== */
 
     function addShipment(code) {
-
         code = String(code || "").trim();
 
-
         if (!code) {
-
-            showStatus(
-                "لم يتم العثور على رقم شحنة",
-                "error"
-            );
-
+            showStatus("لم يتم العثور على رقم شحنة", "error");
             return;
-
         }
-
-
-        /* منع التكرار */
 
         if (shipments.includes(code)) {
-
-            showStatus(
-                "هذه الشحنة موجودة مسبقاً: " + code,
-                "error"
-            );
-
+            showStatus("هذه الشحنة موجودة مسبقاً: " + code, "error");
             return;
-
         }
-
 
         shipments.push(code);
-
-
         saveShipments();
-
         updateTable();
-
-
-        showStatus(
-            "تمت إضافة الشحنة بنجاح: " + code,
-            "success"
-        );
-
+        showStatus("تمت إضافة الشحنة بنجاح: " + code, "success");
     }
-
-
-    /* ==========================================
-       حذف آخر شحنة
-    ========================================== */
 
     function deleteLast() {
-
         if (shipments.length === 0) {
-
-            showStatus(
-                "لا توجد شحنات للحذف",
-                "error"
-            );
-
+            showStatus("لا توجد شحنات للحذف", "error");
             return;
-
         }
-
-
         shipments.pop();
-
-
         saveShipments();
-
         updateTable();
-
-
-        showStatus(
-            "تم حذف آخر شحنة",
-            "success"
-        );
-
+        showStatus("تم حذف آخر شحنة", "success");
     }
-
-
-    /* ==========================================
-       حذف جميع الشحنات
-    ========================================== */
 
     function deleteAll() {
-
         if (shipments.length === 0) {
-
-            showStatus(
-                "لا توجد شحنات للحذف",
-                "error"
-            );
-
+            showStatus("لا توجد شحنات للحذف", "error");
             return;
-
         }
-
-
-        if (
-            !confirm(
-                "هل أنت متأكد من حذف جميع الشحنات؟"
-            )
-        ) {
-
+        if (!confirm("هل أنت متأكد من حذف جميع الشحنات؟")) {
             return;
-
         }
-
-
         shipments = [];
-
-
         saveShipments();
-
         updateTable();
-
-
-        showStatus(
-            "تم حذف جميع الشحنات",
-            "success"
-        );
-
+        showStatus("تم حذف جميع الشحنات", "success");
     }
-
-
-    /* ==========================================
-       إظهار الرسالة
-    ========================================== */
 
     function showStatus(message, type) {
-
-        const status =
-            document.getElementById("status");
-
-
+        const status = document.getElementById("status");
         status.textContent = message;
-
         status.className = type;
-
         status.style.display = "block";
-
-
         setTimeout(function () {
-
             status.style.display = "none";
-
         }, 3500);
-
     }
-
-
-    /* ==========================================
-       تشغيل / إيقاف الكاميرا
-    ========================================== */
 
     async function toggleCamera() {
-
-        const reader =
-            document.getElementById("reader");
-
+        const reader = document.getElementById("reader");
 
         if (cameraRunning) {
-
             await stopCamera();
-
             return;
-
         }
-
 
         reader.style.display = "block";
-
-
-        html5QrCode =
-            new Html5Qrcode("reader");
-
+        html5QrCode = new Html5Qrcode("reader");
 
         const config = {
-
             fps: 10,
-
-            qrbox: {
-                width: 250,
-                height: 150
-            },
-
+            qrbox: { width: 250, height: 150 },
             rememberLastUsedCamera: true,
-
-            experimentalFeatures: {
-                useBarCodeDetectorIfSupported: true
-            }
-
+            experimentalFeatures: { useBarCodeDetectorIfSupported: true }
         };
 
-
         try {
-
             await html5QrCode.start(
-
-                {
-                    facingMode: "environment"
-                },
-
+                { facingMode: "environment" },
                 config,
-
                 function (decodedText) {
-
                     addShipment(decodedText);
-
                     stopCamera();
-
                 },
-
-                function (errorMessage) {
-
-                    /* تجاهل أخطاء القراءة المؤقتة */
-
-                }
-
+                function (errorMessage) {}
             );
-
 
             cameraRunning = true;
-
-
-            document.querySelector(
-                ".btn-main"
-            ).textContent =
-                "⛔ إيقاف الكاميرا";
-
+            document.querySelector(".btn-main").textContent = "⛔ إيقاف الكاميرا";
 
         } catch (error) {
-
             reader.style.display = "none";
-
-
-            showStatus(
-                "تعذر تشغيل الكاميرا. تأكد من السماح للموقع باستخدام الكاميرا.",
-                "error"
-            );
-
+            showStatus("تعذر تشغيل الكاميرا. تأكد من السماح للموقع باستخدام الكاميرا.", "error");
         }
-
     }
-
-
-    /* ==========================================
-       إيقاف الكاميرا
-    ========================================== */
 
     async function stopCamera() {
-
-        if (!html5QrCode) {
-
-            return;
-
-        }
-
+        if (!html5QrCode) return;
 
         try {
-
             if (cameraRunning) {
-
                 await html5QrCode.stop();
-
             }
-
             html5QrCode.clear();
-
         } catch (error) {
-
             console.log(error);
-
         }
 
-
         html5QrCode = null;
-
         cameraRunning = false;
-
-
-        document.getElementById(
-            "reader"
-        ).style.display = "none";
-
-
-        document.querySelector(
-            ".btn-main"
-        ).textContent =
-            "📷 تشغيل الكاميرا";
-
+        document.getElementById("reader").style.display = "none";
+        document.querySelector(".btn-main").textContent = "📷 تشغيل الكاميرا";
     }
 
+    document.getElementById("qr-input-file").addEventListener("change", async function (event) {
+        const file = event.target.files[0];
+        if (!file) return;
 
-    /* ==========================================
-       قراءة الباركود من صورة
-    ========================================== */
+        const scanner = new Html5Qrcode("reader");
 
-    document
-        .getElementById("qr-input-file")
-        .addEventListener(
-            "change",
-            async function (event) {
-
-                const file =
-                    event.target.files[0];
-
-
-                if (!file) {
-
-                    return;
-
-                }
-
-
-                const scanner =
-                    new Html5Qrcode(
-                        "reader"
-                    );
-
-
-                try {
-
-                    const result =
-                        await scanner.scanFile(
-                            file,
-                            true
-                        );
-
-
-                    addShipment(result);
-
-
-                } catch (error) {
-
-                    showStatus(
-                        "لم يتم العثور على باركود واضح داخل الصورة.",
-                        "error"
-                    );
-
-                } finally {
-
-                    try {
-
-                        await scanner.clear();
-
-                    } catch (e) {}
-
-                }
-
-
-                /* السماح باختيار نفس الصورة مرة أخرى */
-
-                event.target.value = "";
-
-            }
-        );
-
+        try {
+            const result = await scanner.scanFile(file, true);
+            addShipment(result);
+        } catch (error) {
+            showStatus("لم يتم العثور على باركود واضح داخل الصورة.", "error");
+        } finally {
+            try {
+                await scanner.clear();
+            } catch (e) {}
+        }
+        event.target.value = "";
+    });
 </script>
 
 </body>
