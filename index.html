@@ -3,35 +3,45 @@
 
 <head>
     <meta charset="UTF-8">
+
     <meta name="viewport"
           content="width=device-width, initial-scale=1.0">
 
     <title>Zajil Express Trading Company</title>
 
-    <!-- مكتبة قراءة الباركود -->
+    <!-- مكتبة قارئ الباركود -->
     <script src="https://unpkg.com/html5-qrcode"
             type="text/javascript"></script>
 
     <style>
+
         * {
             box-sizing: border-box;
         }
 
         body {
             margin: 0;
-            padding: 20px 10px;
+            padding: 15px 8px;
             background: #f4f7fb;
-            font-family: Arial, Tahoma, sans-serif;
+            font-family:
+                Arial,
+                Tahoma,
+                sans-serif;
             color: #111;
         }
+
+        /* =========================
+           البطاقة الرئيسية
+        ========================= */
 
         .card {
             width: 100%;
             max-width: 700px;
-            margin: 0 auto;
-            background: #fff;
+            margin: auto;
+            background: #ffffff;
             border-radius: 28px;
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+            box-shadow:
+                0 8px 30px rgba(0, 0, 0, 0.08);
             overflow: hidden;
         }
 
@@ -41,13 +51,13 @@
 
         .header {
             text-align: center;
-            padding: 32px 20px 25px;
-            background: #fff;
+            padding: 32px 18px 25px;
+            background: #ffffff;
         }
 
         .logo {
-            width: 150px;
-            height: 150px;
+            width: 145px;
+            height: 145px;
             object-fit: contain;
             display: block;
             margin: 0 auto 18px;
@@ -56,17 +66,27 @@
 
         .company-name {
             margin: 0 0 12px;
+
             color: #003b73;
+
             font-size: 30px;
+
             font-weight: 700;
+
             line-height: 1.3;
+
+            letter-spacing: 0.2px;
         }
 
         .scanner-title {
             margin: 0;
+
             color: #111;
-            font-size: 32px;
+
+            font-size: 31px;
+
             font-weight: 700;
+
             line-height: 1.4;
         }
 
@@ -78,31 +98,53 @@
             padding: 0 30px 35px;
         }
 
-        /* الفئة */
+        /* =========================
+           AWB
+        ========================= */
 
         .category {
+            width: 100%;
+
             background: #ffca05;
+
             color: #003b73;
+
             border-radius: 15px;
+
             padding: 18px;
-            text-align: center;
-            font-size: 25px;
-            font-weight: bold;
+
             margin: 10px 0 25px;
+
+            text-align: center;
+
+            font-size: 25px;
+
+            font-weight: bold;
         }
 
-        /* زر الكاميرا */
+        /* =========================
+           زر الكاميرا
+        ========================= */
 
         .btn-main {
-            background: #087ff5;
-            color: white;
-            border: none;
             width: 100%;
+
             padding: 19px;
+
+            border: none;
+
             border-radius: 14px;
+
+            background: #087ff5;
+
+            color: white;
+
             font-size: 24px;
+
             font-weight: bold;
+
             cursor: pointer;
+
             transition: 0.2s;
         }
 
@@ -114,81 +156,158 @@
             transform: scale(0.99);
         }
 
-        /* قارئ الكاميرا */
+        /* =========================
+           قارئ الكاميرا
+        ========================= */
 
         #reader {
             width: 100%;
+
             margin-top: 20px;
+
             display: none;
+
             border-radius: 15px;
+
             overflow: hidden;
         }
 
-        /* خط */
+        /* =========================
+           الخطوط
+        ========================= */
 
         hr {
             border: 0;
-            border-top: 1px solid #ddd;
+
+            border-top:
+                1px solid #ddd;
+
             margin: 30px 0;
         }
 
         /* =========================
-           رفع صورة الباركود
+           عنوان رفع الصورة
         ========================= */
 
         .upload-title {
             display: block;
+
             text-align: center;
+
             font-size: 25px;
+
             font-weight: bold;
+
             margin-bottom: 18px;
         }
 
+        /* =========================
+           مربع اختيار الملف
+        ========================= */
+
         .file-box {
             width: 100%;
-            border: 2px solid #d5d5d5;
+
+            border:
+                2px solid #d5d5d5;
+
             border-radius: 14px;
+
             padding: 18px;
+
             text-align: center;
+
             background: #fff;
         }
 
         .file-box input[type="file"] {
             width: 100%;
+
             font-size: 18px;
         }
 
         .file-box input[type="file"]::file-selector-button {
-            background: #eee;
-            border: 1px solid #aaa;
+            background: #eeeeee;
+
+            border:
+                1px solid #999;
+
             border-radius: 6px;
+
             padding: 10px 16px;
+
             margin-left: 10px;
+
             cursor: pointer;
+
             font-size: 17px;
         }
 
-        /* معلومات الباركود */
+        /* =========================
+           معلومات الباركود
+        ========================= */
 
         .info {
             text-align: center;
+
             color: #777;
+
             font-size: 18px;
+
             line-height: 1.8;
+
             margin: 25px 0;
         }
 
         /* =========================
-           العداد
+           رسالة الحالة
+        ========================= */
+
+        #status {
+            display: none;
+
+            padding: 14px;
+
+            margin-top: 15px;
+
+            border-radius: 10px;
+
+            text-align: center;
+
+            font-size: 18px;
+
+            font-weight: bold;
+        }
+
+        .success {
+            background: #e8f7ee;
+
+            color: #198754;
+        }
+
+        .error {
+            background: #fdeaea;
+
+            color: #dc3545;
+        }
+
+        /* =========================
+           عداد الشحنات
         ========================= */
 
         .counter {
             background: #f1f5f9;
+
             padding: 18px;
+
             border-radius: 14px;
+
             font-size: 25px;
+
             font-weight: bold;
+
             text-align: center;
+
             margin-bottom: 20px;
         }
 
@@ -198,23 +317,33 @@
 
         .buttons {
             display: flex;
+
             gap: 15px;
+
             margin-bottom: 25px;
         }
 
         .btn-delete {
             flex: 1;
+
             padding: 17px 10px;
+
             border-radius: 14px;
+
             font-size: 21px;
+
             font-weight: bold;
+
             cursor: pointer;
-            background: #fff;
+
+            background: white;
         }
 
         .btn-clear {
             color: #dc3545;
-            border: 2px solid #dc3545;
+
+            border:
+                2px solid #dc3545;
         }
 
         .btn-clear:hover {
@@ -223,7 +352,9 @@
 
         .btn-last {
             color: #111;
-            border: 2px solid #ccc;
+
+            border:
+                2px solid #ccc;
         }
 
         .btn-last:hover {
@@ -231,31 +362,40 @@
         }
 
         /* =========================
-           جدول الشحنات
+           الجدول
         ========================= */
 
         .table-wrapper {
             width: 100%;
+
             overflow-x: auto;
         }
 
         table {
             width: 100%;
+
             margin-top: 10px;
+
             border-collapse: collapse;
+
             background: white;
         }
 
         th,
         td {
-            border: 1px solid #ddd;
+            border:
+                1px solid #ddd;
+
             padding: 12px 8px;
+
             text-align: center;
         }
 
         th {
             background: #005baa;
+
             color: white;
+
             font-size: 17px;
         }
 
@@ -269,32 +409,10 @@
 
         .awb {
             direction: ltr;
+
             font-weight: bold;
+
             color: #005baa;
-        }
-
-        /* =========================
-           رسالة الحالة
-        ========================= */
-
-        #status {
-            display: none;
-            padding: 14px;
-            margin-top: 15px;
-            border-radius: 10px;
-            text-align: center;
-            font-size: 18px;
-            font-weight: bold;
-        }
-
-        .success {
-            background: #e8f7ee;
-            color: #198754;
-        }
-
-        .error {
-            background: #fdeaea;
-            color: #dc3545;
         }
 
         /* =========================
@@ -304,7 +422,7 @@
         @media (max-width: 600px) {
 
             body {
-                padding: 10px 5px;
+                padding: 8px 4px;
             }
 
             .card {
@@ -312,7 +430,8 @@
             }
 
             .header {
-                padding: 30px 15px 20px;
+                padding:
+                    30px 12px 20px;
             }
 
             .logo {
@@ -329,7 +448,8 @@
             }
 
             .content {
-                padding: 0 20px 30px;
+                padding:
+                    0 20px 30px;
             }
 
             .category {
@@ -350,11 +470,15 @@
 
             .btn-delete {
                 font-size: 19px;
-                padding: 15px 5px;
+
+                padding:
+                    15px 5px;
             }
         }
+
     </style>
 </head>
+
 
 <body>
 
@@ -369,7 +493,7 @@
         <img
             src="logo.png"
             class="logo"
-            alt="Zajil">
+            alt="Zajil Express Trading Company">
 
         <h1 class="company-name">
             Zajil Express Trading Company
@@ -394,10 +518,11 @@
 
 
         <!-- =========================
-             تشغيل الكاميرا
+             الكاميرا
         ========================= -->
 
         <button
+            id="cameraButton"
             class="btn-main"
             onclick="toggleCamera()">
 
@@ -406,7 +531,7 @@
         </button>
 
 
-        <!-- مكان الكاميرا -->
+        <!-- مكان عرض الكاميرا -->
 
         <div id="reader"></div>
 
@@ -415,7 +540,7 @@
 
 
         <!-- =========================
-             رفع صورة
+             رفع صورة الباركود
         ========================= -->
 
         <label
@@ -437,12 +562,12 @@
         </div>
 
 
-        <!-- =========================
-             رسالة الحالة
-        ========================= -->
+        <!-- رسالة الحالة -->
 
         <div id="status"></div>
 
+
+        <!-- معلومات -->
 
         <div class="info">
 
@@ -472,7 +597,9 @@
         </div>
 
 
-        <!-- أزرار الحذف -->
+        <!-- =========================
+             أزرار الحذف
+        ========================= -->
 
         <div class="buttons">
 
@@ -520,6 +647,7 @@
 
                 </thead>
 
+
                 <tbody id="shipmentTable">
 
                 </tbody>
@@ -547,30 +675,31 @@
 
 
     /* ==========================================
-       تحميل الشحنات المحفوظة
+       تحميل البيانات
     ========================================== */
 
     window.onload = function () {
 
         const saved =
-            localStorage.getItem("zajil_shipments");
+            localStorage.getItem(
+                "zajil_shipments"
+            );
 
         if (saved) {
 
             try {
 
-                shipments = JSON.parse(saved);
+                shipments =
+                    JSON.parse(saved);
 
             } catch (error) {
 
                 shipments = [];
 
             }
-
         }
 
         updateTable();
-
     };
 
 
@@ -595,37 +724,43 @@
     function updateTable() {
 
         const table =
-            document.getElementById("shipmentTable");
+            document.getElementById(
+                "shipmentTable"
+            );
 
         const counter =
-            document.getElementById("counter");
+            document.getElementById(
+                "counter"
+            );
 
 
         table.innerHTML = "";
 
 
-        shipments.forEach(function (awb, index) {
+        shipments.forEach(
+            function (awb, index) {
 
-            const row =
-                document.createElement("tr");
-
-
-            row.innerHTML = `
-
-                <td>
-                    ${index + 1}
-                </td>
-
-                <td class="awb">
-                    ${escapeHtml(awb)}
-                </td>
-
-            `;
+                const row =
+                    document.createElement("tr");
 
 
-            table.appendChild(row);
+                row.innerHTML = `
 
-        });
+                    <td>
+                        ${index + 1}
+                    </td>
+
+                    <td class="awb">
+                        ${escapeHtml(awb)}
+                    </td>
+
+                `;
+
+
+                table.appendChild(row);
+
+            }
+        );
 
 
         counter.textContent =
@@ -656,7 +791,8 @@
 
     function addShipment(code) {
 
-        code = String(code || "").trim();
+        code =
+            String(code || "").trim();
 
 
         if (!code) {
@@ -676,7 +812,8 @@
         if (shipments.includes(code)) {
 
             showStatus(
-                "هذه الشحنة موجودة مسبقاً: " + code,
+                "هذه الشحنة موجودة مسبقاً: " +
+                code,
                 "error"
             );
 
@@ -694,7 +831,8 @@
 
 
         showStatus(
-            "تمت إضافة الشحنة بنجاح: " + code,
+            "تمت إضافة الشحنة بنجاح: " +
+            code,
             "success"
         );
 
@@ -736,7 +874,7 @@
 
 
     /* ==========================================
-       حذف جميع الشحنات
+       حذف الكل
     ========================================== */
 
     function deleteAll() {
@@ -753,14 +891,14 @@
         }
 
 
-        if (
-            !confirm(
+        const confirmed =
+            confirm(
                 "هل أنت متأكد من حذف جميع الشحنات؟"
-            )
-        ) {
+            );
 
+
+        if (!confirmed) {
             return;
-
         }
 
 
@@ -781,40 +919,50 @@
 
 
     /* ==========================================
-       إظهار الرسالة
+       رسالة الحالة
     ========================================== */
 
-    function showStatus(message, type) {
+    function showStatus(
+        message,
+        type
+    ) {
 
         const status =
-            document.getElementById("status");
+            document.getElementById(
+                "status"
+            );
 
 
-        status.textContent = message;
-
-        status.className = type;
-
-        status.style.display = "block";
+        status.textContent =
+            message;
 
 
-        setTimeout(function () {
+        status.className =
+            type;
 
-            status.style.display = "none";
 
-        }, 3500);
+        status.style.display =
+            "block";
+
+
+        setTimeout(
+            function () {
+
+                status.style.display =
+                    "none";
+
+            },
+            3500
+        );
 
     }
 
 
     /* ==========================================
-       تشغيل / إيقاف الكاميرا
+       تشغيل الكاميرا
     ========================================== */
 
     async function toggleCamera() {
-
-        const reader =
-            document.getElementById("reader");
-
 
         if (cameraRunning) {
 
@@ -825,11 +973,26 @@
         }
 
 
-        reader.style.display = "block";
+        const reader =
+            document.getElementById(
+                "reader"
+            );
+
+
+        const button =
+            document.getElementById(
+                "cameraButton"
+            );
+
+
+        reader.style.display =
+            "block";
 
 
         html5QrCode =
-            new Html5Qrcode("reader");
+            new Html5Qrcode(
+                "reader"
+            );
 
 
         const config = {
@@ -841,10 +1004,12 @@
                 height: 150
             },
 
-            rememberLastUsedCamera: true,
+            rememberLastUsedCamera:
+                true,
 
             experimentalFeatures: {
-                useBarCodeDetectorIfSupported: true
+                useBarCodeDetectorIfSupported:
+                    true
             }
 
         };
@@ -855,14 +1020,17 @@
             await html5QrCode.start(
 
                 {
-                    facingMode: "environment"
+                    facingMode:
+                        "environment"
                 },
 
                 config,
 
                 function (decodedText) {
 
-                    addShipment(decodedText);
+                    addShipment(
+                        decodedText
+                    );
 
                     stopCamera();
 
@@ -870,29 +1038,31 @@
 
                 function (errorMessage) {
 
-                    /* تجاهل أخطاء القراءة المؤقتة */
+                    /* أخطاء القراءة المؤقتة
+                       يتم تجاهلها */
 
                 }
 
             );
 
 
-            cameraRunning = true;
+            cameraRunning =
+                true;
 
 
-            document.querySelector(
-                ".btn-main"
-            ).textContent =
+            button.textContent =
                 "⛔ إيقاف الكاميرا";
 
 
         } catch (error) {
 
-            reader.style.display = "none";
+            reader.style.display =
+                "none";
 
 
             showStatus(
-                "تعذر تشغيل الكاميرا. تأكد من السماح للموقع باستخدام الكاميرا.",
+                "تعذر تشغيل الكاميرا. " +
+                "تأكد من السماح للموقع باستخدام الكاميرا.",
                 "error"
             );
 
@@ -906,6 +1076,18 @@
     ========================================== */
 
     async function stopCamera() {
+
+        const reader =
+            document.getElementById(
+                "reader"
+            );
+
+
+        const button =
+            document.getElementById(
+                "cameraButton"
+            );
+
 
         if (!html5QrCode) {
 
@@ -922,6 +1104,7 @@
 
             }
 
+
             html5QrCode.clear();
 
         } catch (error) {
@@ -931,19 +1114,19 @@
         }
 
 
-        html5QrCode = null;
-
-        cameraRunning = false;
-
-
-        document.getElementById(
-            "reader"
-        ).style.display = "none";
+        html5QrCode =
+            null;
 
 
-        document.querySelector(
-            ".btn-main"
-        ).textContent =
+        cameraRunning =
+            false;
+
+
+        reader.style.display =
+            "none";
+
+
+        button.textContent =
             "📷 تشغيل الكاميرا";
 
     }
@@ -954,7 +1137,9 @@
     ========================================== */
 
     document
-        .getElementById("qr-input-file")
+        .getElementById(
+            "qr-input-file"
+        )
         .addEventListener(
             "change",
             async function (event) {
@@ -985,13 +1170,16 @@
                         );
 
 
-                    addShipment(result);
+                    addShipment(
+                        result
+                    );
 
 
                 } catch (error) {
 
                     showStatus(
-                        "لم يتم العثور على باركود واضح داخل الصورة.",
+                        "لم يتم العثور على " +
+                        "باركود واضح داخل الصورة.",
                         "error"
                     );
 
@@ -1006,9 +1194,11 @@
                 }
 
 
-                /* السماح باختيار نفس الصورة مرة أخرى */
+                /* السماح باختيار نفس
+                   الصورة مرة أخرى */
 
-                event.target.value = "";
+                event.target.value =
+                    "";
 
             }
         );
