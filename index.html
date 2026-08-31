@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Al Zajel Express Trading Company</title>
 
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+
   <style>
     * {
       box-sizing: border-box;
@@ -95,6 +97,14 @@
       display: none;
     }
 
+    .status-msg {
+      color: #003399;
+      font-size: 0.85rem;
+      margin-top: 6px;
+      display: none;
+      font-weight: bold;
+    }
+
     .counter-box {
       background-color: #ffc20e;
       border-radius: 8px;
@@ -168,7 +178,8 @@
     <label for="attachedFile" class="custom-file-upload">
       📁 اختيار ملف
     </label>
-    <input type="file" id="attachedFile" onchange="handleFileUpload(event)">
+    <input type="file" id="attachedFile" accept="image/*" onchange="processFileImage(event)">
+    <div id="status" class="status-msg">جاري معالجة الملف...</div>
   </div>
 
   <div class="counter-box">
@@ -202,10 +213,39 @@
     }
   }
 
-  function handleFileUpload(event) {
+  // قراءة الأرقام من الصورة المرفقة تلقائياً
+  async function processFileImage(event) {
     const file = event.target.files[0];
-    if (file) {
-      alert(`تم اختيار الملف: ${file.name}`);
+    if (!file) return;
+
+    const statusEl = document.getElementById('status');
+    statusEl.style.display = 'block';
+    statusEl.innerText = 'جاري قراءة الأرقام من الملف...';
+
+    try {
+      const worker = await Tesseract.createWorker('eng');
+      const ret = await worker.recognize(file);
+      await worker.terminate();
+
+      const lines = ret.data.text.split('\n');
+      let countAdded = 0;
+
+      lines.forEach(line => {
+        const matches = line.match(/\b\d{10,20}(-\d+)*\b/g);
+        if (matches) {
+          matches.forEach(code => {
+            if (!shipments.includes(code)) {
+              shipments.push(code);
+              countAdded++;
+            }
+          });
+        }
+      });
+
+      statusEl.innerText = countAdded > 0 ? `تم إضافة ${countAdded} شحنة من الملف!` : 'لم يتم العثور على أرقام شحنات بالملف.';
+      updateUI();
+    } catch (err) {
+      statusEl.innerText = 'حدث خطأ أثناء قراءة الملف.';
     }
   }
 
@@ -235,6 +275,7 @@
   function clearList() {
     if (confirm("هل تريد مسح جميع الشحنات المسجلة؟")) {
       shipments = [];
+      document.getElementById('status').style.display = 'none';
       updateUI();
     }
   }
