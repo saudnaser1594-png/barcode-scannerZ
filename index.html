@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>نظام قراءة أرقام الشحنات - زاجل</title>
+  <title>Al Zajel Express Trading Company</title>
   
   <!-- مكتبة قراءة الباركود -->
   <script src="https://unpkg.com/html5-qrcode"></script>
-  <!-- مكتبة إنشاء ملفات Excel -->
+  <!-- مكتبة إنشاء وقراءة ملفات Excel -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
   <style>
@@ -16,7 +16,7 @@
       font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     }
 
-    /* الشاشة باللون الأصفر */
+    /* خلفية الشاشة باللون الأصفر */
     body {
       background-color: #ffc107;
       margin: 0;
@@ -39,13 +39,14 @@
       border: 2px solid #0056b3;
     }
 
-    /* الهيدر والعناوين باللون الأزرق */
-    .header-title {
+    /* اسم الشركة في أعلى الصفحة باللون الأزرق */
+    .company-title {
       color: #0056b3;
       text-align: center;
       margin: 0 0 15px 0;
-      font-size: 1.4rem;
+      font-size: 1.3rem;
       font-weight: bold;
+      direction: ltr;
     }
 
     #reader {
@@ -57,7 +58,32 @@
       margin-bottom: 15px;
     }
 
-    /* عداد الشحنات - النص والاسم أزرق */
+    /* قسم اختيار ملف */
+    .file-input-container {
+      background: #ffffff;
+      border: 1px solid #0056b3;
+      border-radius: 8px;
+      padding: 10px;
+      margin-bottom: 15px;
+      text-align: center;
+    }
+
+    .file-input-container label {
+      display: block;
+      color: #0056b3;
+      font-weight: bold;
+      margin-bottom: 6px;
+      font-size: 0.9rem;
+    }
+
+    input[type="file"] {
+      width: 100%;
+      color: #0056b3;
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+
+    /* عداد الشحنات - النص أزرق */
     .counter-box {
       background-color: #fff3cd;
       border: 1px solid #0056b3;
@@ -90,11 +116,11 @@
       font-family: monospace;
     }
 
-    /* الأزرار باللون الأزرق والنص أصفر/أبيض */
+    /* الأزرار باللون الأزرق والنص أصفر */
     .btn-action {
       width: 100%;
       background-color: #0056b3;
-      color: #ffc107; /* الأسماء على الأزرار أصفر مميز */
+      color: #ffc107;
       border: none;
       padding: 14px;
       border-radius: 8px;
@@ -118,19 +144,27 @@
 <body>
 
 <div class="card">
-  <h2 class="header-title">نظام إدارة شحنات زاجل</h2>
+  <!-- الاسم في الأعلى باللون الأزرق -->
+  <h2 class="company-title">Al Zajel Express Trading Company</h2>
 
+  <!-- نافذة الكاميرا للباركود -->
   <div id="reader"></div>
+
+  <!-- خيار إضافة/رفع ملف -->
+  <div class="file-input-container">
+    <label for="excelFile">تحميل ملف شحنات (Excel):</label>
+    <input type="file" id="excelFile" accept=".xlsx, .xls" onchange="importExcel(event)">
+  </div>
 
   <div class="counter-box">
     عدد الشحنات المسجلة: <span id="count">0</span>
   </div>
 
   <div class="list-box" id="scannedList">
-    <!-- تظهر الأرقام المقروءة باللون الأزرق -->
+    <!-- الأرقام المقروءة تظهر هنا -->
   </div>
 
-  <button class="btn-action" onclick="exportToExcel()">تصدير الملف بصيغة Excel (نفس النموذج)</button>
+  <button class="btn-action" onclick="exportToExcel()">تصدير الملف بصيغة Excel</button>
   <button class="btn-action btn-clear" onclick="clearList()">مسح القائمة</button>
 </div>
 
@@ -138,6 +172,7 @@
   let shipments = [];
   let html5QrCode;
 
+  // تشغيل كاميرا الباركود
   function startScanner() {
     html5QrCode = new Html5Qrcode("reader");
     html5QrCode.start(
@@ -153,6 +188,29 @@
     );
   }
 
+  // استيراد الشحنات من أي ملف Excel خارجي عند اختياره
+  function importExcel(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const data = new Uint8Array(e.target.result);
+      const workbook = XLSX.read(data, { type: 'array' });
+      const firstSheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[firstSheetName];
+      const json = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+      json.forEach(row => {
+        if (row[0] && row[0] !== "AWBNUMBER" && !shipments.includes(String(row[0]))) {
+          shipments.push(String(row[0]));
+        }
+      });
+      updateUI();
+    };
+    reader.readAsArrayBuffer(file);
+  }
+
   function updateUI() {
     document.getElementById('count').innerText = shipments.length;
     const listContainer = document.getElementById('scannedList');
@@ -160,15 +218,14 @@
     listContainer.scrollTop = listContainer.scrollHeight;
   }
 
+  // تصدير الشحنات بنفس رأس العمود AWBNUMBER
   function exportToExcel() {
     if (shipments.length === 0) {
       alert("لا توجد شحنات مسجلة للتصدير");
       return;
     }
 
-    // تصدير الشحنات تحت عمود AWBNUMBER تماماً كما بالصورة
     const excelData = shipments.map(code => ({ "AWBNUMBER": code }));
-    
     const worksheet = XLSX.utils.json_to_sheet(excelData);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "SaleRent Details");
