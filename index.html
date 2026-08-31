@@ -5,11 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Al Zajel Express Trading Company</title>
   
-  <!-- مكتبة قراءة الباركود -->
   <script src="https://unpkg.com/html5-qrcode"></script>
-  <!-- مكتبة استخراج النصوص والأرقام من الصور (OCR) -->
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
-  <!-- مكتبة إنشاء ملفات Excel -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
   <style>
@@ -18,9 +15,8 @@
       font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     }
 
-    /* خلفية الصفحة باللون الأصفر */
     body {
-      background-color: #ffc107;
+      background-color: #fef9e7;
       margin: 0;
       padding: 15px;
       display: flex;
@@ -30,76 +26,245 @@
       direction: rtl;
     }
 
-    /* الكارت الداخلي بنفس تصميم الصورة */
     .card {
       width: 100%;
-      max-width: 400px;
-      background: #fffbe6; /* أصفر فاتح جداً هادئ */
+      max-width: 420px;
+      background-color: #ffffff;
       border-radius: 20px;
-      border: 2px solid #0056b3;
+      border: 2px solid #003399;
       padding: 20px 15px;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
     }
 
-    /* عنوان الشركة في الأعلى باللون الأزرق */
-    .company-title {
-      color: #0056b3;
+    .header-banner {
+      background-color: #ffc20e;
+      border-radius: 12px;
+      padding: 12px 10px;
+      margin-bottom: 18px;
+      border: 1px solid #e0a800;
       text-align: center;
-      margin: 0 0 15px 0;
-      font-size: 1.3rem;
-      font-weight: bold;
+    }
+
+    .company-title {
+      color: #003399;
+      margin: 0;
+      font-size: 1.25rem;
+      font-weight: 800;
       direction: ltr;
     }
 
-    /* إطار الكاميرا لقراءة الباركود */
     #reader {
       width: 100%;
-      border-radius: 12px;
+      border-radius: 14px;
       overflow: hidden;
-      border: 2px solid #0056b3;
+      border: 2px solid #003399;
       background-color: #000000;
       margin-bottom: 15px;
     }
 
-    /* صندوق اختيار ملف (الصورة) */
     .file-input-container {
-      background: #ffffff;
-      border: 2px solid #0056b3;
+      background: #fffdf2;
+      border: 2px dashed #ffc20e;
       border-radius: 12px;
       padding: 12px;
       margin-bottom: 15px;
       text-align: center;
     }
 
-    .file-input-container label {
-      display: block;
-      color: #0056b3; /* العبارة باللون الأزرق */
+    .custom-file-upload {
+      display: inline-block;
+      width: 100%;
+      padding: 10px;
+      color: #003399;
       font-weight: bold;
-      margin-bottom: 8px;
-      font-size: 1rem;
+      cursor: pointer;
+      text-align: center;
+      font-size: 0.95rem;
     }
 
     input[type="file"] {
-      width: 100%;
-      color: #0056b3; /* نص اسم الملف باللون الأزرق */
-      font-size: 0.9rem;
-      cursor: pointer;
+      display: none;
     }
 
     .status-msg {
-      color: #0056b3;
+      color: #003399;
       font-size: 0.85rem;
-      margin-top: 6px;
+      margin-top: 8px;
       display: none;
       font-weight: bold;
     }
 
-    /* عداد الشحنات المسجلة */
     .counter-box {
-      background-color: #fffbe6;
-      border: 2px solid #0056b3;
-      padding: 14px;
+      background-color: #ffc20e;
       border-radius: 12px;
+      padding: 12px;
       text-align: center;
-      font-size: 1.1rem;
+      font-size: 1.05rem;
       font-weight: bold;
+      color: #003399;
+      margin-bottom: 12px;
+    }
+
+    .list-box {
+      max-height: 140px;
+      overflow-y: auto;
+      background: #f8f9fa;
+      border: 1px solid #d1d5db;
+      border-radius: 12px;
+      padding: 8px;
+      margin-bottom: 15px;
+    }
+
+    .list-item {
+      padding: 8px;
+      background-color: #ffffff;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      margin-bottom: 6px;
+      font-size: 0.95rem;
+      color: #003399;
+      font-weight: bold;
+      font-family: monospace;
+      text-align: center;
+    }
+
+    .btn-action {
+      width: 100%;
+      background-color: #003399;
+      color: #ffc20e;
+      border: none;
+      padding: 14px;
+      border-radius: 10px;
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+      margin-bottom: 10px;
+      transition: opacity 0.2s;
+    }
+
+    .btn-action:hover {
+      opacity: 0.92;
+    }
+
+    .btn-clear {
+      background-color: #dc2626;
+      color: #ffffff;
+    }
+  </style>
+</head>
+<body>
+
+<div class="card">
+  <div class="header-banner">
+    <h2 class="company-title">Al Zajel Express Trading Company</h2>
+  </div>
+
+  <div id="reader"></div>
+
+  <div class="file-input-container">
+    <label for="galleryFile" class="custom-file-upload">
+      📁 اختيار صورة من الاستوديو / المعرض
+    </label>
+    <input type="file" id="galleryFile" accept="image/*" onchange="processGalleryImage(event)">
+    <div id="status" class="status-msg">جاري معالجة الصورة...</div>
+  </div>
+
+  <div class="counter-box">
+    عدد الشحنات المسجلة: <span id="count">0</span>
+  </div>
+
+  <div class="list-box" id="scannedList"></div>
+
+  <button class="btn-action" onclick="exportToExcel()">تصدير الملف بصيغة Excel</button>
+  <button class="btn-action btn-clear" onclick="clearList()">مسح القائمة</button>
+</div>
+
+<script>
+  let shipments = [];
+  let html5QrCode;
+
+  function startScanner() {
+    html5QrCode = new Html5Qrcode("reader");
+    html5QrCode.start(
+      { facingMode: "environment" }, 
+      { fps: 10, qrbox: { width: 250, height: 140 } },
+      (decodedText) => {
+        if (decodedText && !shipments.includes(decodedText)) {
+          shipments.push(decodedText);
+          updateUI();
+        }
+      },
+      (errorMessage) => {}
+    );
+  }
+
+  async function processGalleryImage(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const statusEl = document.getElementById('status');
+    statusEl.style.display = 'block';
+    statusEl.innerText = 'جاري تحليل الصورة وقراءة الشحنات...';
+
+    try {
+      const worker = await Tesseract.createWorker('eng');
+      const ret = await worker.recognize(file);
+      await worker.terminate();
+
+      const lines = ret.data.text.split('\n');
+      let countAdded = 0;
+
+      lines.forEach(line => {
+        const matches = line.match(/\b\d{10,20}(-\d+)*\b/g);
+        if (matches) {
+          matches.forEach(code => {
+            if (!shipments.includes(code)) {
+              shipments.push(code);
+              countAdded++;
+            }
+          });
+        }
+      });
+
+      statusEl.innerText = countAdded > 0 ? `تم إضافة ${countAdded} شحنة من الصورة!` : 'لم يتم العثور على أرقام شحنات بالصورة.';
+      updateUI();
+    } catch (err) {
+      statusEl.innerText = 'حدث خطأ أثناء قراءة الصورة.';
+    }
+  }
+
+  function updateUI() {
+    document.getElementById('count').innerText = shipments.length;
+    const listContainer = document.getElementById('scannedList');
+    listContainer.innerHTML = shipments.map(code => `<div class="list-item">${code}</div>`).join('');
+    listContainer.scrollTop = listContainer.scrollHeight;
+  }
+
+  function exportToExcel() {
+    if (shipments.length === 0) {
+      alert("لا توجد شحنات مسجلة للتصدير");
+      return;
+    }
+
+    // تجهيز البيانات طبقاً لعمود AWBNUMBER وورقة العمل SaleRent Details
+    const excelData = shipments.map(code => ({ "AWBNUMBER": code }));
+    const worksheet = XLSX.utils.json_to_sheet(excelData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "SaleRent Details");
+
+    XLSX.writeFile(workbook, "Shipments.xlsx");
+  }
+
+  function clearList() {
+    if (confirm("هل تريد مسح جميع الشحنات المسجلة؟")) {
+      shipments = [];
+      document.getElementById('status').style.display = 'none';
+      updateUI();
+    }
+  }
+
+  window.onload = startScanner;
+</script>
+
+</body>
+</html>
