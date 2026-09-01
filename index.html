@@ -7,7 +7,7 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     
-    <title>Al Zajel Express Trading Company</title>
+    <title>Zajil Express Trading Company</title>
     
     <!-- مكتبة مسح الباركود للكاميرا -->
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
@@ -22,15 +22,9 @@
         body { font-family: system-ui, sans-serif; text-align: center; background: #eef2f5; margin: 0; padding: 20px; }
         .card { max-width: 550px; margin: 0 auto; background: white; padding: 25px; border-radius: 14px; box-shadow: 0 4px 15px rgba(0,0,0,0.15); border-top: 8px solid #ffcc00; }
         
-        button, input[type="file"], select { margin: 8px 0; padding: 12px 15px; border-radius: 8px; font-size: 16px; cursor: pointer; }
-        select { width: 100%; border: 1px solid #003399; background: #fff; color: #003399; font-weight: bold; }
+        button, input[type="file"] { margin: 8px 0; padding: 12px 15px; border-radius: 8px; font-size: 16px; cursor: pointer; }
         #reader { width: 100%; margin-top: 15px; display: none; border: 2px dashed #003399; overflow: hidden; border-radius: 8px; }
-        #reader video { 
-            width: 100% !important; 
-            height: auto !important; 
-            object-fit: cover;
-            image-rendering: -webkit-optimize-contrast;
-        }
+        #reader video { width: 100% !important; height: auto !important; object-fit: cover; }
         table { width: 100%; margin-top: 20px; border-collapse: collapse; }
         th { background: #003399 !important; color: #ffffff !important; padding: 10px; }
         td { border: 1px solid #ddd; padding: 8px; text-align: center; font-size: 15px; }
@@ -42,71 +36,44 @@
 <body>
 
     <div class="card">
-        <h2 style="color: #003399 !important; margin-bottom: 5px; font-weight: 800;">Al Zajel Express Trading Company</h2>
+        <h2 style="color: #003399 !important; margin-bottom: 5px; font-weight: 800;">Zajil Express Trading Company</h2>
         <h2 style="color: #003399 !important; margin-top: 0; font-size: 18px;">Scan Barcode Shipment</h2>
     
-    <select id="camera-select">
-        <option value="">جاري جلب الكاميرات المتاحة...</option>
-    </select>
+        <button style="background: #003399 !important; color: white !important; border: none; width: 100%; font-weight: bold;" onclick="startCamera()">📷 تشغيل الكاميرا للتصوير</button>
+        <div id="reader"></div>
 
-    <button style="background: #003399 !important; color: white !important; border: none; width: 100%; font-weight: bold;" onclick="startCamera()">📷 تشغيل الكاميرا المحددة</button>
-    <div id="reader"></div>
+        <hr>
 
-    <hr>
+        <label for="qr-input-file"><b style="color: #003399;">أو اختر صورة من الجهاز:</b></label><br>
+        <input type="file" id="qr-input-file" accept="image/*">
 
-    <label for="qr-input-file"><b style="color: #003399;">أو اختر صورة من الجهاز:</b></label><br>
-    <input type="file" id="qr-input-file" accept="image/*">
+        <hr>
 
-    <hr>
+        <h3 style="color: #003399;">قائمة الشحنات (<span id="count" style="color: #ffcc00; font-size: 22px;">0</span>)</h3>
+        <table id="shipments-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>AWBNUMBER</th>
+                    <th>الإجراءات</th>
+                </tr>
+            </thead>
+            <tbody id="table-body"></tbody>
+        </table>
 
-    <h3 style="color: #003399;">قائمة الشحنات (<span id="count" style="color: #ffcc00; font-size: 22px;">0</span>)</h3>
-    <table id="shipments-table">
-        <thead>
-            <tr>
-                <th>#</th>
-                <th>AWBNUMBER</th>
-                <th>الإجراءات</th>
-            </tr>
-        </thead>
-        <tbody id="table-body"></tbody>
-    </table>
-
-    <br>
-    <button style="background: #ffcc00 !important; color: #003399 !important; border: none; width: 100%; font-weight: bold;" onclick="exportToExcel()">📥 تحميل ملف Excel</button>
-</div>
+        <br>
+        <button style="background: #ffcc00 !important; color: #003399 !important; border: none; width: 100%; font-weight: bold;" onclick="exportToExcel()">📥 تحميل ملف Excel</button>
+    </div>
 
 <script>
     let shipments = [];
     let html5QrCode;
 
-    window.addEventListener('DOMContentLoaded', async () => {
+    window.addEventListener('DOMContentLoaded', () => {
         if (typeof Html5Qrcode !== 'undefined') {
             html5QrCode = new Html5Qrcode("reader");
-            await loadCameras();
         }
     });
-
-    async function loadCameras() {
-        try {
-            const devices = await Html5Qrcode.getCameras();
-            const select = document.getElementById("camera-select");
-            select.innerHTML = "";
-            
-            if (devices && devices.length > 0) {
-                devices.forEach((device, index) => {
-                    const option = document.createElement("option");
-                    option.value = device.id;
-                    option.text = device.label || `كاميرا ${index + 1}`;
-                    if (index === devices.length - 1) option.selected = true;
-                    select.appendChild(option);
-                });
-            } else {
-                select.innerHTML = "<option value=''>لم يتم العثور على كاميرات</option>";
-            }
-        } catch (e) {
-            document.getElementById("camera-select").innerHTML = "<option value=''>اضغط تشغيل لمنح إذن الكاميرا</option>";
-        }
-    }
 
     function isPhoneNumber(rawText) {
         if (!rawText) return true;
@@ -148,40 +115,57 @@
         document.getElementById("count").innerText = shipments.length;
     }
 
+    // تشغيل الكاميرا بجودة فائقة Full HD وميزة التركيز التلقائي
     async function startCamera() {
         if (!html5QrCode) {
             html5QrCode = new Html5Qrcode("reader");
         }
-        
-        if (html5QrCode.isScanning) {
-            await html5QrCode.stop();
-        }
-
         document.getElementById("reader").style.display = "block";
-        const selectedCameraId = document.getElementById("camera-select").value;
 
         const cameraConfig = {
-            fps: 25,
-            qrbox: { width: 280, height: 160 }
-        };
-
-        const onScanSuccess = (decodedText) => {
-            if (addShipmentCode(decodedText)) {
-                alert("تم مسح رقم الشحنة بنجاح: " + decodedText);
-                html5QrCode.stop();
-                document.getElementById("reader").style.display = "none";
+            fps: 30,
+            qrbox: (viewfinderWidth, viewfinderHeight) => {
+                const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
+                return {
+                    width: Math.floor(minEdge * 0.85),
+                    height: Math.floor(minEdge * 0.5)
+                };
+            },
+            videoConstraints: {
+                facingMode: { exact: "environment" },
+                width: { min: 1024, ideal: 1920, max: 3840 },
+                height: { min: 720, ideal: 1080, max: 2160 },
+                focusMode: { ideal: "continuous" },
+                advanced: [{ focusMode: "continuous" }]
             }
         };
 
         try {
-            if (selectedCameraId) {
-                await html5QrCode.start(selectedCameraId, cameraConfig, onScanSuccess, () => {});
-            } else {
-                await html5QrCode.start({ facingMode: "environment" }, cameraConfig, onScanSuccess, () => {});
-                await loadCameras();
-            }
+            await html5QrCode.start(
+                { facingMode: "environment" },
+                cameraConfig,
+                (decodedText) => {
+                    if (addShipmentCode(decodedText)) {
+                        alert("تم مسح رقم الشحنة بنجاح: " + decodedText);
+                        html5QrCode.stop();
+                        document.getElementById("reader").style.display = "none";
+                    }
+                },
+                () => {}
+            );
         } catch (err) {
-            alert("تعذر تشغيل الكاميرا المحددة، يرجى اختيار كاميرا أخرى من القائمة.");
+            // كود الاحتياط في حال عدم دعم بعض أجهزة الجوال للإعدادات المتقدمة
+            await html5QrCode.start(
+                { facingMode: "environment" },
+                { fps: 20, qrbox: { width: 300, height: 160 } },
+                (decodedText) => {
+                    if (addShipmentCode(decodedText)) {
+                        alert("تم مسح رقم الشحنة بنجاح: " + decodedText);
+                        html5QrCode.stop();
+                        document.getElementById("reader").style.display = "none";
+                    }
+                }
+            );
         }
     }
 
@@ -208,91 +192,75 @@
         let resultsFound = [];
         const fileUrl = URL.createObjectURL(imageFile);
 
-        const quaggaRes = await scanWithQuagga(fileUrl);
-        if (quaggaRes) {
-            resultsFound.push(quaggaRes);
-            URL.revokeObjectURL(fileUrl);
-            return resultsFound;
-        }
-
         try {
-            if (!html5QrCode) html5QrCode = new Html5Qrcode("reader");
-            const res = await html5QrCode.scanFile(imageFile, true);
-            if (res) resultsFound.push(res);
-        } catch (e) {}
-
-        if (resultsFound.length > 0) {
-            URL.revokeObjectURL(fileUrl);
-            return resultsFound;
-        }
-
-        const codeReader = new ZXing.BrowserMultiFormatReader();
-        const imgElement = document.createElement('img');
-        imgElement.src = fileUrl;
-        await new Promise(r => imgElement.onload = r);
-
-        try {
-            const zxingRes = await codeReader.decodeMultipleFromImageElement(imgElement);
-            zxingRes.forEach(r => resultsFound.push(r.text));
-        } catch (e) {
-            try {
-                const singleRes = await codeReader.decodeFromImageElement(imgElement);
-                resultsFound.push(singleRes.text);
-            } catch (err) {}
-        }
-
-        if (resultsFound.length > 0) {
-            URL.revokeObjectURL(fileUrl);
-            return resultsFound;
-        }
-
-        const angles = [0, 90, 180, 270];
-        for (let angle of angles) {
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            
-            if (angle === 90 || angle === 270) {
-                canvas.width = imgElement.naturalHeight;
-                canvas.height = imgElement.naturalWidth;
-            } else {
-                canvas.width = imgElement.naturalWidth;
-                canvas.height = imgElement.naturalHeight;
+            // 1. استخدام QuaggaJS
+            const quaggaRes = await scanWithQuagga(fileUrl);
+            if (quaggaRes) {
+                resultsFound.push(quaggaRes);
+                return resultsFound;
             }
 
-            ctx.translate(canvas.width / 2, canvas.height / 2);
-            ctx.rotate((angle * Math.PI) / 180);
-            ctx.drawImage(imgElement, -imgElement.naturalWidth / 2, -imgElement.naturalHeight / 2);
+            // 2. استخدام Html5Qrcode
+            try {
+                if (!html5QrCode) html5QrCode = new Html5Qrcode("reader");
+                const res = await html5QrCode.scanFile(imageFile, true);
+                if (res) resultsFound.push(res);
+            } catch (e) {}
 
-            const rotatedDataUrl = canvas.toDataURL('image/jpeg', 0.95);
+            if (resultsFound.length > 0) return resultsFound;
 
-            const qRot = await scanWithQuagga(rotatedDataUrl);
-            if (qRot) {
-                resultsFound.push(qRot);
-                break;
-            }
-
-            const whiteBorderCanvas = document.createElement('canvas');
-            const wbCtx = whiteBorderCanvas.getContext('2d');
-            whiteBorderCanvas.width = canvas.width + 100;
-            whiteBorderCanvas.height = canvas.height + 100;
-            wbCtx.fillStyle = '#FFFFFF';
-            wbCtx.fillRect(0, 0, whiteBorderCanvas.width, whiteBorderCanvas.height);
-            wbCtx.drawImage(canvas, 50, 50);
-
-            const processedImg = new Image();
-            processedImg.src = whiteBorderCanvas.toDataURL();
-            await new Promise(r => processedImg.onload = r);
+            // 3. استخدام ZXing Direct
+            const codeReader = new ZXing.BrowserMultiFormatReader();
+            const imgElement = document.createElement('img');
+            imgElement.src = fileUrl;
+            await new Promise(r => imgElement.onload = r);
 
             try {
-                const singleRot = await codeReader.decodeFromImageElement(processedImg);
-                if (singleRot) {
-                    resultsFound.push(singleRot.text);
+                const zxingRes = await codeReader.decodeMultipleFromImageElement(imgElement);
+                zxingRes.forEach(r => resultsFound.push(r.text));
+            } catch (e) {
+                try {
+                    const singleRes = await codeReader.decodeFromImageElement(imgElement);
+                    resultsFound.push(singleRes.text);
+                } catch (err) {}
+            }
+
+            if (resultsFound.length > 0) {
+                codeReader.reset();
+                return resultsFound;
+            }
+
+            // 4. تدوير الصورة ومعالجتها
+            const angles = [90, 180, 270];
+            for (let angle of angles) {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                
+                if (angle === 90 || angle === 270) {
+                    canvas.width = imgElement.naturalHeight;
+                    canvas.height = imgElement.naturalWidth;
+                } else {
+                    canvas.width = imgElement.naturalWidth;
+                    canvas.height = imgElement.naturalHeight;
+                }
+
+                ctx.translate(canvas.width / 2, canvas.height / 2);
+                ctx.rotate((angle * Math.PI) / 180);
+                ctx.drawImage(imgElement, -imgElement.naturalWidth / 2, -imgElement.naturalHeight / 2);
+
+                const rotatedDataUrl = canvas.toDataURL('image/jpeg', 0.9);
+
+                const qRot = await scanWithQuagga(rotatedDataUrl);
+                if (qRot) {
+                    resultsFound.push(qRot);
                     break;
                 }
-            } catch (e) {}
+            }
+            codeReader.reset();
+        } finally {
+            URL.revokeObjectURL(fileUrl);
         }
 
-        URL.revokeObjectURL(fileUrl);
         return resultsFound;
     }
 
@@ -316,6 +284,8 @@
         } else {
             alert("تعذر قراءة الباركود، يرجى التأكد من اختيار صورة واضحة.");
         }
+        
+        e.target.value = '';
     });
 
     function exportToExcel() {
