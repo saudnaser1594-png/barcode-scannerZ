@@ -13,7 +13,7 @@
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <!-- مكتبة ZXing للقراءة العامّة -->
     <script src="https://unpkg.com/@zxing/library@0.21.3/umd/index.min.js"></script>
-    <!-- مكتبة QuaggaJS المخصصة للباركود الخطي الصعب -->
+    <!-- مكتبة QuaggaJS المخصصة للباركود الخطي -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
     <!-- مكتبة تصدير Excel -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -115,7 +115,7 @@
         document.getElementById("count").innerText = shipments.length;
     }
 
-    // تشغيل الكاميرا بدقة فائقة HD وإجبار الفوكس التلقائي المستمر
+    // تشغيل الكاميرا المباشرة بدقة عالية HD
     async function startCamera() {
         if (!html5QrCode) {
             html5QrCode = new Html5Qrcode("reader");
@@ -123,20 +123,12 @@
         document.getElementById("reader").style.display = "block";
 
         const cameraConfig = {
-            fps: 30,
-            qrbox: (viewfinderWidth, viewfinderHeight) => {
-                const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
-                return {
-                    width: Math.floor(minEdge * 0.85),
-                    height: Math.floor(minEdge * 0.5)
-                };
-            },
+            fps: 25,
+            qrbox: { width: 300, height: 180 },
             videoConstraints: {
-                facingMode: { exact: "environment" },
-                width: { min: 1024, ideal: 1920, max: 3840 },
-                height: { min: 720, ideal: 1080, max: 2160 },
-                focusMode: { ideal: "continuous" },
-                advanced: [{ focusMode: "continuous" }]
+                facingMode: { ideal: "environment" },
+                width: { ideal: 1920 },
+                height: { ideal: 1080 }
             }
         };
 
@@ -156,7 +148,7 @@
         } catch (err) {
             await html5QrCode.start(
                 { facingMode: "environment" },
-                { fps: 20, qrbox: { width: 300, height: 160 } },
+                { fps: 15, qrbox: { width: 280, height: 160 } },
                 (decodedText) => {
                     if (addShipmentCode(decodedText)) {
                         alert("تم مسح رقم الشحنة بنجاح: " + decodedText);
@@ -168,23 +160,6 @@
         }
     }
 
-    // زيادة التباين وتحويل الصور الضبابية إلى أبيض وأسود صريح
-    function preprocessCanvas(canvas) {
-        const ctx = canvas.getContext('2d');
-        const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        const d = imgData.data;
-        
-        for (let i = 0; i < d.length; i += 4) {
-            const avg = (d[i] + d[i + 1] + d[i + 2]) / 3;
-            const color = avg > 120 ? 255 : 0;
-            d[i] = color;
-            d[i + 1] = color;
-            d[i + 2] = color;
-        }
-        ctx.putImageData(imgData, 0, 0);
-        return canvas.toDataURL('image/jpeg', 0.9);
-    }
-
     function scanWithQuagga(srcUrl) {
         return new Promise((resolve) => {
             Quagga.decodeSingle({
@@ -192,17 +167,9 @@
                 numOfWorkers: 0,
                 inputStream: { size: 1600 },
                 decoder: {
-                    readers: [
-                        "code_128_reader", 
-                        "ean_reader", 
-                        "code_39_reader", 
-                        "upc_reader",
-                        "code_93_reader",
-                        "codabar_reader"
-                    ],
-                    multiple: false
+                    readers: ["code_128_reader", "ean_reader", "code_39_reader", "upc_reader", "code_93_reader", "codabar_reader"]
                 },
-                locate: true // تحديد موضع الباركود المائل تلقائياً
+                locate: true
             }, function(result) {
                 if (result && result.codeResult && result.codeResult.code) {
                     resolve(result.codeResult.code);
@@ -213,9 +180,8 @@
         });
     }
 
-    // خوارزمية المسح الشاملة (تستهدف الصور المائلة، المنخفضة التباين، والضبابية)
-    async function scanFileUltimate(imageFile) {
-        let resultsFound = [];
+    // المحرك الفائق لقراءة الصور المائلة والضعيفة
+    async function scanFileSmart(imageFile) {
         const fileUrl = URL.createObjectURL(imageFile);
 
         try {
@@ -223,76 +189,74 @@
             imgElement.src = fileUrl;
             await new Promise(r => imgElement.onload = r);
 
-            const codeReader = new ZXing.BrowserMultiFormatReader();
+            // 1. استخدام BarcodeDetector الذكي (المدمج بالمتصفح - الأقوى للصور المائلة)
+            if ('BarcodeDetector' in window) {
+                try {
+                    const formats = await BarcodeDetector.getSupportedFormats();
+                    const detector = new BarcodeDetector({ formats });
+                    const barcodes = await detector.detect(imgElement);
+                    if (barcodes && barcodes.length > 0) {
+                        return [barcodes[0].rawValue];
+                    }
+                } catch (e) {}
+            }
 
-            // 1. القراءة المباشرة
+            // 2. المحاولة بمكتبة Html5Qrcode
             try {
-                const zxingRes = await codeReader.decodeFromImageElement(imgElement);
-                if (zxingRes) resultsFound.push(zxingRes.text);
+                if (!html5QrCode) html5QrCode = new Html5Qrcode("reader");
+                const res = await html5QrCode.scanFile(imageFile, true);
+                if (res) return [res];
             } catch (e) {}
 
+            // 3. المحاولة بـ Quagga
             const qRes = await scanWithQuagga(fileUrl);
-            if (qRes) resultsFound.push(qRes);
+            if (qRes) return [qRes];
 
-            if (resultsFound.length > 0) {
-                codeReader.reset();
-                return resultsFound;
-            }
-
-            // 2. التدوير بزوايا دقيقة (شاملة الميلان) وتغيير الأحجام وتطبيق فلاتر التباين
-            const angles = [0, 15, -15, 30, -30, 45, -45, 90, 180, 270];
-            const scales = [1.0, 0.75, 1.5];
-
-            for (let scale of scales) {
-                for (let angle of angles) {
-                    const canvas = document.createElement('canvas');
-                    const ctx = canvas.getContext('2d');
-                    
-                    const width = imgElement.naturalWidth * scale;
-                    const height = imgElement.naturalHeight * scale;
-
-                    const rad = (angle * Math.PI) / 180;
-                    const sin = Math.abs(Math.sin(rad));
-                    const cos = Math.abs(Math.cos(rad));
-
-                    canvas.width = width * cos + height * sin;
-                    canvas.height = width * sin + height * cos;
-
-                    ctx.translate(canvas.width / 2, canvas.height / 2);
-                    ctx.rotate(rad);
-                    ctx.drawImage(imgElement, -width / 2, -height / 2, width, height);
-
-                    // أ) المسح بالتدوير العادي
-                    const rotatedDataUrl = canvas.toDataURL('image/jpeg', 0.85);
-                    let found = await scanWithQuagga(rotatedDataUrl);
-
-                    // ب) المسح بعد تطبيق فلتر التباين (للقضاء على الضبابية)
-                    if (!found) {
-                        const enhancedUrl = preprocessCanvas(canvas);
-                        found = await scanWithQuagga(enhancedUrl);
-                    }
-
-                    if (found) {
-                        resultsFound.push(found);
-                        break;
-                    }
+            // 4. المحاولة بـ ZXing
+            const codeReader = new ZXing.BrowserMultiFormatReader();
+            try {
+                const zxingRes = await codeReader.decodeFromImageElement(imgElement);
+                if (zxingRes) {
+                    codeReader.reset();
+                    return [zxingRes.text];
                 }
-                if (resultsFound.length > 0) break;
+            } catch (e) {}
+
+            // 5. محاولة تدوير الصورة 90 درجة للصور العمودية/المائلة
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = imgElement.naturalHeight;
+            canvas.height = imgElement.naturalWidth;
+            ctx.translate(canvas.width / 2, canvas.height / 2);
+            ctx.rotate((90 * Math.PI) / 180);
+            ctx.drawImage(imgElement, -imgElement.naturalWidth / 2, -imgElement.naturalHeight / 2);
+
+            if ('BarcodeDetector' in window) {
+                try {
+                    const detector = new BarcodeDetector({ formats: ['code_128', 'code_39', 'ean_13', 'qr_code', 'upc_a'] });
+                    const barcodes = await detector.detect(canvas);
+                    if (barcodes && barcodes.length > 0) {
+                        return [barcodes[0].rawValue];
+                    }
+                } catch (e) {}
             }
+
+            const rotQuagga = await scanWithQuagga(canvas.toDataURL('image/jpeg', 0.9));
+            if (rotQuagga) return [rotQuagga];
 
             codeReader.reset();
         } finally {
             URL.revokeObjectURL(fileUrl);
         }
 
-        return resultsFound;
+        return [];
     }
 
     document.getElementById('qr-input-file').addEventListener('change', async e => {
         if (e.target.files.length === 0) return;
         const imageFile = e.target.files[0];
         
-        const scannedTexts = await scanFileUltimate(imageFile);
+        const scannedTexts = await scanFileSmart(imageFile);
         let addedAny = false;
 
         for (let text of scannedTexts) {
