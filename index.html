@@ -7,7 +7,7 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     
-    <title>Zajil Express Trading Company</title>
+    <title>Al Zajel Express Trading Company</title>
     
     <!-- مكتبة مسح الباركود للكاميرا -->
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
@@ -22,9 +22,15 @@
         body { font-family: system-ui, sans-serif; text-align: center; background: #eef2f5; margin: 0; padding: 20px; }
         .card { max-width: 550px; margin: 0 auto; background: white; padding: 25px; border-radius: 14px; box-shadow: 0 4px 15px rgba(0,0,0,0.15); border-top: 8px solid #ffcc00; }
         
-        button, input[type="file"] { margin: 8px 0; padding: 12px 15px; border-radius: 8px; font-size: 16px; cursor: pointer; }
+        button, input[type="file"], select { margin: 8px 0; padding: 12px 15px; border-radius: 8px; font-size: 16px; cursor: pointer; }
+        select { width: 100%; border: 1px solid #003399; background: #fff; color: #003399; font-weight: bold; }
         #reader { width: 100%; margin-top: 15px; display: none; border: 2px dashed #003399; overflow: hidden; border-radius: 8px; }
-        #reader video { width: 100% !important; height: auto !important; object-fit: cover; }
+        #reader video { 
+            width: 100% !important; 
+            height: auto !important; 
+            object-fit: cover;
+            image-rendering: -webkit-optimize-contrast;
+        }
         table { width: 100%; margin-top: 20px; border-collapse: collapse; }
         th { background: #003399 !important; color: #ffffff !important; padding: 10px; }
         td { border: 1px solid #ddd; padding: 8px; text-align: center; font-size: 15px; }
@@ -36,10 +42,14 @@
 <body>
 
     <div class="card">
-        <h2 style="color: #003399 !important; margin-bottom: 5px; font-weight: 800;">Zajil Express Trading Company</h2>
+        <h2 style="color: #003399 !important; margin-bottom: 5px; font-weight: 800;">Al Zajel Express Trading Company</h2>
         <h2 style="color: #003399 !important; margin-top: 0; font-size: 18px;">Scan Barcode Shipment</h2>
     
-    <button style="background: #003399 !important; color: white !important; border: none; width: 100%; font-weight: bold;" onclick="startCamera()">📷 تشغيل الكاميرا للتصوير</button>
+    <select id="camera-select">
+        <option value="">جاري جلب الكاميرات المتاحة...</option>
+    </select>
+
+    <button style="background: #003399 !important; color: white !important; border: none; width: 100%; font-weight: bold;" onclick="startCamera()">📷 تشغيل الكاميرا المحددة</button>
     <div id="reader"></div>
 
     <hr>
@@ -69,11 +79,34 @@
     let shipments = [];
     let html5QrCode;
 
-    window.addEventListener('DOMContentLoaded', () => {
+    window.addEventListener('DOMContentLoaded', async () => {
         if (typeof Html5Qrcode !== 'undefined') {
             html5QrCode = new Html5Qrcode("reader");
+            await loadCameras();
         }
     });
+
+    async function loadCameras() {
+        try {
+            const devices = await Html5Qrcode.getCameras();
+            const select = document.getElementById("camera-select");
+            select.innerHTML = "";
+            
+            if (devices && devices.length > 0) {
+                devices.forEach((device, index) => {
+                    const option = document.createElement("option");
+                    option.value = device.id;
+                    option.text = device.label || `كاميرا ${index + 1}`;
+                    if (index === devices.length - 1) option.selected = true;
+                    select.appendChild(option);
+                });
+            } else {
+                select.innerHTML = "<option value=''>لم يتم العثور على كاميرات</option>";
+            }
+        } catch (e) {
+            document.getElementById("camera-select").innerHTML = "<option value=''>اضغط تشغيل لمنح إذن الكاميرا</option>";
+        }
+    }
 
     function isPhoneNumber(rawText) {
         if (!rawText) return true;
@@ -115,71 +148,43 @@
         document.getElementById("count").innerText = shipments.length;
     }
 
-    // تشغيل الكاميرا بالدقة العالية وتعديل اختيار العدسة الخلفية تلقائياً
     async function startCamera() {
         if (!html5QrCode) {
             html5QrCode = new Html5Qrcode("reader");
         }
+        
+        if (html5QrCode.isScanning) {
+            await html5QrCode.stop();
+        }
+
         document.getElementById("reader").style.display = "block";
+        const selectedCameraId = document.getElementById("camera-select").value;
+
+        const cameraConfig = {
+            fps: 25,
+            qrbox: { width: 280, height: 160 }
+        };
+
+        const onScanSuccess = (decodedText) => {
+            if (addShipmentCode(decodedText)) {
+                alert("تم مسح رقم الشحنة بنجاح: " + decodedText);
+                html5QrCode.stop();
+                document.getElementById("reader").style.display = "none";
+            }
+        };
 
         try {
-            // جلب كافة الكاميرات المتاحة في الجهاز
-            const devices = await Html5Qrcode.getCameras();
-            let cameraId = null;
-
-            if (devices && devices.length > 0) {
-                // البحث عن الكاميرا الخلفية (back/environment/rear)
-                const backCam = devices.find(d => 
-                    d.label.toLowerCase().includes('back') || 
-                    d.label.toLowerCase().includes('rear') || 
-                    d.label.toLowerCase().includes('environment') ||
-                    d.label.toLowerCase().includes('خلفية')
-                );
-                // اختر الكاميرا الخلفية المحددة، أو الأخيرة في القائمة (غالبًا ما تكون الخلفية الرئيسية)
-                cameraId = backCam ? backCam.id : devices[devices.length - 1].id;
+            if (selectedCameraId) {
+                await html5QrCode.start(selectedCameraId, cameraConfig, onScanSuccess, () => {});
+            } else {
+                await html5QrCode.start({ facingMode: "environment" }, cameraConfig, onScanSuccess, () => {});
+                await loadCameras();
             }
-
-            const cameraConfig = {
-                fps: 25,
-                qrbox: { width: 300, height: 160 },
-                videoConstraints: {
-                    width: { ideal: 1920 },
-                    height: { ideal: 1080 },
-                    focusMode: "continuous"
-                }
-            };
-
-            const cameraParam = cameraId ? cameraId : { facingMode: "environment" };
-
-            await html5QrCode.start(
-                cameraParam,
-                cameraConfig,
-                (decodedText) => {
-                    if (addShipmentCode(decodedText)) {
-                        alert("تم مسح رقم الشحنة بنجاح: " + decodedText);
-                        html5QrCode.stop();
-                        document.getElementById("reader").style.display = "none";
-                    }
-                },
-                () => {}
-            );
         } catch (err) {
-            // كود الاحتياط في حال وجود قيود أمان
-            html5QrCode.start(
-                { facingMode: "environment" },
-                { fps: 15, qrbox: { width: 280, height: 150 } },
-                (decodedText) => {
-                    if (addShipmentCode(decodedText)) {
-                        alert("تم مسح رقم الشحنة بنجاح: " + decodedText);
-                        html5QrCode.stop();
-                        document.getElementById("reader").style.display = "none";
-                    }
-                }
-            );
+            alert("تعذر تشغيل الكاميرا المحددة، يرجى اختيار كاميرا أخرى من القائمة.");
         }
     }
 
-    // القراءة عبر QuaggaJS المخصصة للصور
     function scanWithQuagga(srcUrl) {
         return new Promise((resolve) => {
             Quagga.decodeSingle({
@@ -199,28 +204,28 @@
         });
     }
 
-    // خطة المسح الشاملة للصور المتنوعة
     async function scanFileUltimate(imageFile) {
         let resultsFound = [];
         const fileUrl = URL.createObjectURL(imageFile);
 
-        // 1. استخدام QuaggaJS
         const quaggaRes = await scanWithQuagga(fileUrl);
         if (quaggaRes) {
             resultsFound.push(quaggaRes);
+            URL.revokeObjectURL(fileUrl);
             return resultsFound;
         }
 
-        // 2. استخدام Html5Qrcode
         try {
             if (!html5QrCode) html5QrCode = new Html5Qrcode("reader");
             const res = await html5QrCode.scanFile(imageFile, true);
             if (res) resultsFound.push(res);
         } catch (e) {}
 
-        if (resultsFound.length > 0) return resultsFound;
+        if (resultsFound.length > 0) {
+            URL.revokeObjectURL(fileUrl);
+            return resultsFound;
+        }
 
-        // 3. استخدام ZXing Direct
         const codeReader = new ZXing.BrowserMultiFormatReader();
         const imgElement = document.createElement('img');
         imgElement.src = fileUrl;
@@ -236,9 +241,11 @@
             } catch (err) {}
         }
 
-        if (resultsFound.length > 0) return resultsFound;
+        if (resultsFound.length > 0) {
+            URL.revokeObjectURL(fileUrl);
+            return resultsFound;
+        }
 
-        // 4. معالجة وتدوير الصورة وإضافة حاشية بيضاء
         const angles = [0, 90, 180, 270];
         for (let angle of angles) {
             const canvas = document.createElement('canvas');
@@ -285,6 +292,7 @@
             } catch (e) {}
         }
 
+        URL.revokeObjectURL(fileUrl);
         return resultsFound;
     }
 
