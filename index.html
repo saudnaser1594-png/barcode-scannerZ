@@ -115,7 +115,7 @@
         document.getElementById("count").innerText = shipments.length;
     }
 
-    // تشغيل الكاميرا بجودة فائقة Full HD وميزة التركيز التلقائي
+    // تشغيل الكاميرا بدقة فائقة HD وإجبار الفوكس التلقائي المستمر
     async function startCamera() {
         if (!html5QrCode) {
             html5QrCode = new Html5Qrcode("reader");
@@ -154,7 +154,6 @@
                 () => {}
             );
         } catch (err) {
-            // كود الاحتياط في حال عدم دعم بعض أجهزة الجوال للإعدادات المتقدمة
             await html5QrCode.start(
                 { facingMode: "environment" },
                 { fps: 20, qrbox: { width: 300, height: 160 } },
@@ -169,15 +168,41 @@
         }
     }
 
+    // زيادة التباين وتحويل الصور الضبابية إلى أبيض وأسود صريح
+    function preprocessCanvas(canvas) {
+        const ctx = canvas.getContext('2d');
+        const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const d = imgData.data;
+        
+        for (let i = 0; i < d.length; i += 4) {
+            const avg = (d[i] + d[i + 1] + d[i + 2]) / 3;
+            const color = avg > 120 ? 255 : 0;
+            d[i] = color;
+            d[i + 1] = color;
+            d[i + 2] = color;
+        }
+        ctx.putImageData(imgData, 0, 0);
+        return canvas.toDataURL('image/jpeg', 0.9);
+    }
+
     function scanWithQuagga(srcUrl) {
         return new Promise((resolve) => {
             Quagga.decodeSingle({
                 src: srcUrl,
                 numOfWorkers: 0,
-                inputStream: { size: 1280 },
+                inputStream: { size: 1600 },
                 decoder: {
-                    readers: ["code_128_reader", "ean_reader", "code_39_reader", "upc_reader"]
-                }
+                    readers: [
+                        "code_128_reader", 
+                        "ean_reader", 
+                        "code_39_reader", 
+                        "upc_reader",
+                        "code_93_reader",
+                        "codabar_reader"
+                    ],
+                    multiple: false
+                },
+                locate: true // تحديد موضع الباركود المائل تلقائياً
             }, function(result) {
                 if (result && result.codeResult && result.codeResult.code) {
                     resolve(result.codeResult.code);
@@ -188,74 +213,73 @@
         });
     }
 
+    // خوارزمية المسح الشاملة (تستهدف الصور المائلة، المنخفضة التباين، والضبابية)
     async function scanFileUltimate(imageFile) {
         let resultsFound = [];
         const fileUrl = URL.createObjectURL(imageFile);
 
         try {
-            // 1. استخدام QuaggaJS
-            const quaggaRes = await scanWithQuagga(fileUrl);
-            if (quaggaRes) {
-                resultsFound.push(quaggaRes);
-                return resultsFound;
-            }
-
-            // 2. استخدام Html5Qrcode
-            try {
-                if (!html5QrCode) html5QrCode = new Html5Qrcode("reader");
-                const res = await html5QrCode.scanFile(imageFile, true);
-                if (res) resultsFound.push(res);
-            } catch (e) {}
-
-            if (resultsFound.length > 0) return resultsFound;
-
-            // 3. استخدام ZXing Direct
-            const codeReader = new ZXing.BrowserMultiFormatReader();
             const imgElement = document.createElement('img');
             imgElement.src = fileUrl;
             await new Promise(r => imgElement.onload = r);
 
+            const codeReader = new ZXing.BrowserMultiFormatReader();
+
+            // 1. القراءة المباشرة
             try {
-                const zxingRes = await codeReader.decodeMultipleFromImageElement(imgElement);
-                zxingRes.forEach(r => resultsFound.push(r.text));
-            } catch (e) {
-                try {
-                    const singleRes = await codeReader.decodeFromImageElement(imgElement);
-                    resultsFound.push(singleRes.text);
-                } catch (err) {}
-            }
+                const zxingRes = await codeReader.decodeFromImageElement(imgElement);
+                if (zxingRes) resultsFound.push(zxingRes.text);
+            } catch (e) {}
+
+            const qRes = await scanWithQuagga(fileUrl);
+            if (qRes) resultsFound.push(qRes);
 
             if (resultsFound.length > 0) {
                 codeReader.reset();
                 return resultsFound;
             }
 
-            // 4. تدوير الصورة ومعالجتها
-            const angles = [90, 180, 270];
-            for (let angle of angles) {
-                const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
-                
-                if (angle === 90 || angle === 270) {
-                    canvas.width = imgElement.naturalHeight;
-                    canvas.height = imgElement.naturalWidth;
-                } else {
-                    canvas.width = imgElement.naturalWidth;
-                    canvas.height = imgElement.naturalHeight;
+            // 2. التدوير بزوايا دقيقة (شاملة الميلان) وتغيير الأحجام وتطبيق فلاتر التباين
+            const angles = [0, 15, -15, 30, -30, 45, -45, 90, 180, 270];
+            const scales = [1.0, 0.75, 1.5];
+
+            for (let scale of scales) {
+                for (let angle of angles) {
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    
+                    const width = imgElement.naturalWidth * scale;
+                    const height = imgElement.naturalHeight * scale;
+
+                    const rad = (angle * Math.PI) / 180;
+                    const sin = Math.abs(Math.sin(rad));
+                    const cos = Math.abs(Math.cos(rad));
+
+                    canvas.width = width * cos + height * sin;
+                    canvas.height = width * sin + height * cos;
+
+                    ctx.translate(canvas.width / 2, canvas.height / 2);
+                    ctx.rotate(rad);
+                    ctx.drawImage(imgElement, -width / 2, -height / 2, width, height);
+
+                    // أ) المسح بالتدوير العادي
+                    const rotatedDataUrl = canvas.toDataURL('image/jpeg', 0.85);
+                    let found = await scanWithQuagga(rotatedDataUrl);
+
+                    // ب) المسح بعد تطبيق فلتر التباين (للقضاء على الضبابية)
+                    if (!found) {
+                        const enhancedUrl = preprocessCanvas(canvas);
+                        found = await scanWithQuagga(enhancedUrl);
+                    }
+
+                    if (found) {
+                        resultsFound.push(found);
+                        break;
+                    }
                 }
-
-                ctx.translate(canvas.width / 2, canvas.height / 2);
-                ctx.rotate((angle * Math.PI) / 180);
-                ctx.drawImage(imgElement, -imgElement.naturalWidth / 2, -imgElement.naturalHeight / 2);
-
-                const rotatedDataUrl = canvas.toDataURL('image/jpeg', 0.9);
-
-                const qRot = await scanWithQuagga(rotatedDataUrl);
-                if (qRot) {
-                    resultsFound.push(qRot);
-                    break;
-                }
+                if (resultsFound.length > 0) break;
             }
+
             codeReader.reset();
         } finally {
             URL.revokeObjectURL(fileUrl);
